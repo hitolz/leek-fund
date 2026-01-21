@@ -5,6 +5,7 @@ import { FundTrendChart } from "./FundTrendChart";
 interface FundDetailPanelProps {
   detail: FundDetail | null;
   trend: FundTrend | null;
+  accumTrend: FundTrend | null;
   loading: boolean;
   error: string | null;
 }
@@ -12,6 +13,7 @@ interface FundDetailPanelProps {
 export const FundDetailPanel: React.FC<FundDetailPanelProps> = ({
   detail,
   trend,
+  accumTrend,
   loading,
   error,
 }) => {
@@ -68,7 +70,19 @@ export const FundDetailPanel: React.FC<FundDetailPanelProps> = ({
         </div>
       </div>
 
-      <FundTrendChart trend={trend} />
+      <div className="fund-trend-stack">
+        <FundTrendChart
+          trend={trend}
+          title="单位净值走势"
+          valueFormatter={(value) => value.toFixed(4)}
+        />
+        <FundTrendChart
+          trend={accumTrend}
+          title="累计收益率走势"
+          stroke="#fa8c16"
+          valueFormatter={(value) => `${value.toFixed(2)}%`}
+        />
+      </div>
     </div>
   );
 };

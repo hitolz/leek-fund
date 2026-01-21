@@ -14,6 +14,7 @@ export interface FundSummary {
   name: string;
   daily_change_percent: string | null;
   update_time: string | null;
+  holding_amount?: number | null;
 }
 
 export interface FundDetail {
@@ -39,7 +40,7 @@ export interface FundTrend {
  * 基金列表
  */
 export interface FundList {
-  id: string;
+  id: number;
   name: string;
   fund_codes: string[];
   created_at: number;

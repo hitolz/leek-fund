@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { FundSummary } from "../types";
 import { useTauriCommands } from "../hooks/useTauriCommands";
 import { ListDetail } from "./ListDetail";
 
 interface ListDetailViewProps {
-  listId: string | null;
+  listId: number | null;
   listName: string;
   selectedFundCode: string | null;
   onSelectFund: (code: string) => void;
@@ -25,10 +25,13 @@ export const ListDetailView: React.FC<ListDetailViewProps> = ({
   const [funds, setFunds] = useState<FundSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [newFundCode, setNewFundCode] = useState("");
-  const { getListFundSummaries, addFundToList } = useTauriCommands();
+  const [sortKey, setSortKey] = useState<"holding" | "change">("change");
+  const [sortOrder, setSortOrder] = useState<"none" | "asc" | "desc">("desc");
+  const { getListFundSummaries, addFundToList, syncFundPingzhong } =
+    useTauriCommands();
 
   useEffect(() => {
-    if (listId) {
+    if (listId !== null) {
       loadFunds(false);
     } else {
       setFunds([]);
@@ -36,7 +39,7 @@ export const ListDetailView: React.FC<ListDetailViewProps> = ({
   }, [listId]);
 
   useEffect(() => {
-    if (!listId) return;
+    if (listId === null) return;
     const timer = setInterval(() => {
       loadFunds(true);
     }, refreshIntervalMs);
@@ -44,7 +47,7 @@ export const ListDetailView: React.FC<ListDetailViewProps> = ({
   }, [listId, refreshIntervalMs]);
 
   const loadFunds = async (silent = false) => {
-    if (!listId) return;
+    if (listId === null) return;
 
     if (!silent) {
       setLoading(true);
@@ -52,6 +55,11 @@ export const ListDetailView: React.FC<ListDetailViewProps> = ({
     try {
       const fundList = await getListFundSummaries(listId);
       setFunds(fundList);
+      if (silent && fundList.length > 0) {
+        void Promise.allSettled(
+          fundList.map((fund) => syncFundPingzhong(fund.code))
+        );
+      }
     } catch (error) {
       if (!silent && showToast) {
         showToast(String(error), "error");
@@ -64,7 +72,7 @@ export const ListDetailView: React.FC<ListDetailViewProps> = ({
   };
 
   const handleAddFund = async () => {
-    if (!listId) return;
+    if (listId === null) return;
     const code = newFundCode.trim();
     if (!/^[0-9]{6}$/.test(code)) {
       showToast?.("请输入6位基金代码", "error");
@@ -82,7 +90,35 @@ export const ListDetailView: React.FC<ListDetailViewProps> = ({
     }
   };
 
-  if (!listId) {
+  const sortedFunds = useMemo(() => {
+    if (sortOrder === "none") {
+      return funds;
+    }
+    const withIndex = funds.map((fund, index) => ({ fund, index }));
+    withIndex.sort((a, b) => {
+      const aValue =
+        sortKey === "holding"
+          ? a.fund.holding_amount ?? null
+          : parseChangePercent(a.fund.daily_change_percent);
+      const bValue =
+        sortKey === "holding"
+          ? b.fund.holding_amount ?? null
+          : parseChangePercent(b.fund.daily_change_percent);
+      if (aValue === null && bValue === null) {
+        return a.index - b.index;
+      }
+      if (aValue === null) {
+        return 1;
+      }
+      if (bValue === null) {
+        return -1;
+      }
+      return sortOrder === "asc" ? aValue - bValue : bValue - aValue;
+    });
+    return withIndex.map((item) => item.fund);
+  }, [funds, sortOrder]);
+
+  if (listId === null) {
     return (
       <div className="list-detail-view empty">
         <p>👈 请选择一个列表查看详情</p>
@@ -155,8 +191,34 @@ export const ListDetailView: React.FC<ListDetailViewProps> = ({
         </button>
       </div>
 
+      <div className="fund-sort">
+        <span className="fund-sort-label">排序字段</span>
+        <select
+          className="fund-sort-select"
+          value={sortKey}
+          onChange={(event) =>
+            setSortKey(event.target.value as "holding" | "change")
+          }
+        >
+          <option value="holding">持仓金额</option>
+          <option value="change">当日涨跌幅</option>
+        </select>
+        <span className="fund-sort-label">排序方式</span>
+        <select
+          className="fund-sort-select"
+          value={sortOrder}
+          onChange={(event) =>
+            setSortOrder(event.target.value as "none" | "asc" | "desc")
+          }
+        >
+          <option value="none">不排序</option>
+          <option value="asc">升序</option>
+          <option value="desc">降序</option>
+        </select>
+      </div>
+
       <div className="funds-list">
-        {funds.map((fund) => (
+        {sortedFunds.map((fund) => (
           <ListDetail
             key={fund.code}
             fund={fund}
@@ -168,3 +230,9 @@ export const ListDetailView: React.FC<ListDetailViewProps> = ({
     </div>
   );
 };
+
+function parseChangePercent(value: string | null) {
+  if (!value) return null;
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}

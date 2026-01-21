@@ -15,14 +15,22 @@ interface AppProps {
 function App({ globalRefreshMs }: AppProps) {
   const showToast = useToast();
   const [lists, setLists] = useState<FundList[]>([]);
-  const [selectedListId, setSelectedListId] = useState<string | null>(null);
+  const [selectedListId, setSelectedListId] = useState<number | null>(null);
   const [selectedFundCode, setSelectedFundCode] = useState<string | null>(null);
   const [listsError, setListsError] = useState<string | null>(null);
   const [fundDetail, setFundDetail] = useState<FundDetail | null>(null);
   const [fundTrend, setFundTrend] = useState<FundTrend | null>(null);
+  const [fundAccumTrend, setFundAccumTrend] = useState<FundTrend | null>(null);
   const [fundDetailLoading, setFundDetailLoading] = useState(false);
   const [fundDetailError, setFundDetailError] = useState<string | null>(null);
-  const { getAllLists, getFundDetail, getFundTrend } = useTauriCommands();
+  const [leftCollapsed, setLeftCollapsed] = useState(false);
+  const {
+    getAllLists,
+    getFundDetail,
+    getFundTrend,
+    getFundAccumTrend,
+    getStorageWarning,
+  } = useTauriCommands();
 
   // 加载所有列表
   const loadLists = async () => {
@@ -47,12 +55,27 @@ function App({ globalRefreshMs }: AppProps) {
     loadLists();
   }, []);
 
+  useEffect(() => {
+    const loadWarning = async () => {
+      try {
+        const warning = await getStorageWarning();
+        if (warning) {
+          showToast(warning, "error");
+        }
+      } catch (error) {
+        // ignore
+      }
+    };
+    loadWarning();
+  }, [getStorageWarning, showToast]);
+
   const selectedList = lists.find((l) => l.id === selectedListId);
 
   useEffect(() => {
     setSelectedFundCode(null);
     setFundDetail(null);
     setFundTrend(null);
+    setFundAccumTrend(null);
     setFundDetailError(null);
   }, [selectedListId]);
 
@@ -60,6 +83,7 @@ function App({ globalRefreshMs }: AppProps) {
     if (!selectedFundCode) {
       setFundDetail(null);
       setFundTrend(null);
+      setFundAccumTrend(null);
       setFundDetailError(null);
       return;
     }
@@ -116,27 +140,56 @@ function App({ globalRefreshMs }: AppProps) {
       }
     };
 
+    const loadAccumTrend = async () => {
+      try {
+        const trend = await getFundAccumTrend(selectedFundCode);
+        setFundAccumTrend(trend);
+      } catch (error) {
+        setFundAccumTrend(null);
+      }
+    };
+
     loadDetail(false);
     loadTrend();
+    loadAccumTrend();
 
     const timer = setInterval(() => {
       loadDetail(true);
     }, globalRefreshMs);
 
     return () => clearInterval(timer);
-  }, [selectedFundCode, getFundDetail, getFundTrend, globalRefreshMs]);
+  }, [
+    selectedFundCode,
+    getFundDetail,
+    getFundTrend,
+    getFundAccumTrend,
+    globalRefreshMs,
+  ]);
 
   return (
     <div className="app-container">
-      <div className="left-section">
-        {listsError && <div className="list-error">{listsError}</div>}
-        <ListsPanel
-          lists={lists}
-          selectedListId={selectedListId}
-          onSelectList={setSelectedListId}
-          onListsChange={handleListsChange}
-          showToast={showToast}
-        />
+      <div className={`left-section ${leftCollapsed ? "collapsed" : ""}`}>
+        <button
+          type="button"
+          className="left-toggle-btn"
+          onClick={() => setLeftCollapsed((prev) => !prev)}
+          aria-label={leftCollapsed ? "展开列表" : "隐藏列表"}
+          title={leftCollapsed ? "展开列表" : "隐藏列表"}
+        >
+          {leftCollapsed ? "›" : "‹"}
+        </button>
+        {!leftCollapsed && (
+          <>
+            {listsError && <div className="list-error">{listsError}</div>}
+            <ListsPanel
+              lists={lists}
+              selectedListId={selectedListId}
+              onSelectList={setSelectedListId}
+              onListsChange={handleListsChange}
+              showToast={showToast}
+            />
+          </>
+        )}
       </div>
 
       <div className="middle-section">
@@ -155,6 +208,7 @@ function App({ globalRefreshMs }: AppProps) {
         <FundDetailPanel
           detail={fundDetail}
           trend={fundTrend}
+          accumTrend={fundAccumTrend}
           loading={fundDetailLoading}
           error={fundDetailError}
         />

@@ -18,7 +18,6 @@ export const ListDetail: React.FC<ListDetailProps> = ({
   onSelect,
 }) => {
   const changeClass = getChangeClass(fund.daily_change_percent);
-  const timeLabel = formatTimestamp(fund.update_time);
 
   return (
     <button
@@ -35,7 +34,6 @@ export const ListDetail: React.FC<ListDetailProps> = ({
           {formatChangePercent(fund.daily_change_percent)}
         </span>
       </div>
-      {timeLabel && <div className="fund-time">{timeLabel}</div>}
     </button>
   );
 };

@@ -95,6 +95,61 @@ pub async fn get_fund_trend(code: &str) -> AppResult<FundTrend> {
     })
 }
 
+/// 获取 pingzhongdata 原始响应
+pub async fn fetch_pingzhong_payload(code: &str) -> AppResult<String> {
+    if !FundInfo::validate_code(code) {
+        return Err(AppError::ValidationError(
+            "基金代码格式错误，请输入6位数字".to_string(),
+        ));
+    }
+
+    let client = build_http_client();
+    let url = format!("https://fund.eastmoney.com/pingzhongdata/{}.js", code);
+    let response = client.get(&url).send().await?;
+    if !response.status().is_success() {
+        return Err(AppError::FundDetailUnavailable(code.to_string()));
+    }
+
+    response
+        .text()
+        .await
+        .map_err(|e| AppError::NetworkError(format!("读取响应失败: {}", e)))
+}
+
+pub async fn get_fund_accum_trend(code: &str) -> AppResult<FundTrend> {
+    if !FundInfo::validate_code(code) {
+        return Err(AppError::ValidationError(
+            "基金代码格式错误，请输入6位数字".to_string(),
+        ));
+    }
+
+    let client = build_http_client();
+    let url = format!("https://fund.eastmoney.com/pingzhongdata/{}.js", code);
+    let response = client.get(&url).send().await?;
+    if !response.status().is_success() {
+        return Err(AppError::FundTrendUnavailable(code.to_string()));
+    }
+
+    let text = response.text().await?;
+    let mut points = parse_accum_trend_points(&text)?;
+    if points.is_empty() {
+        return Err(AppError::FundTrendUnavailable(code.to_string()));
+    }
+
+    let window = if points.len() > 30 {
+        points = points.split_off(points.len() - 30);
+        "最近30个交易日".to_string()
+    } else {
+        format!("最近{}个交易日", points.len())
+    };
+
+    Ok(FundTrend {
+        code: code.to_string(),
+        window,
+        points,
+    })
+}
+
 #[derive(Debug, Deserialize)]
 struct NetWorthPoint {
     x: i64,
@@ -114,6 +169,37 @@ fn parse_trend_points(text: &str) -> AppResult<Vec<TrendPoint>> {
             date,
             value: point.y,
         });
+    }
+    Ok(points)
+}
+
+fn parse_accum_trend_points(text: &str) -> AppResult<Vec<TrendPoint>> {
+    let array_text = extract_js_array(text, "Data_ACWorthTrend")
+        .ok_or_else(|| AppError::ParseError("缺少累计走势数据".to_string()))?;
+    let raw_points: Vec<Vec<serde_json::Value>> = serde_json::from_str(&array_text)?;
+    let mut points = Vec::with_capacity(raw_points.len());
+    let mut base: Option<f64> = None;
+    for item in raw_points {
+        if item.len() < 2 {
+            continue;
+        }
+        let ts = item[0].as_i64();
+        let value = item[1].as_f64();
+        if let (Some(ts), Some(value)) = (ts, value) {
+            let base_value = base.get_or_insert(value);
+            let return_value = if *base_value == 0.0 {
+                0.0
+            } else {
+                (value / *base_value - 1.0) * 100.0
+            };
+            let date = chrono::NaiveDateTime::from_timestamp_millis(ts)
+                .map(|dt| dt.date().to_string())
+                .unwrap_or_else(|| "1970-01-01".to_string());
+            points.push(TrendPoint {
+                date,
+                value: return_value,
+            });
+        }
     }
     Ok(points)
 }

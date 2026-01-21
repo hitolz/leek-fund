@@ -4,6 +4,9 @@ import {
   deleteList,
   getFundDetail,
   getFundTrend,
+  getFundAccumTrend,
+  syncFundPingzhong,
+  getStorageWarning,
   getAllLists,
   getListFundSummaries,
   getListFunds,
@@ -26,6 +29,9 @@ export function useTauriCommands() {
     getListFundSummaries,
     getFundDetail,
     getFundTrend,
+    getFundAccumTrend,
+    syncFundPingzhong,
+    getStorageWarning,
     reorderLists,
   };
 }

@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use sqlx::SqlitePool;
 use std::path::PathBuf;
 
 /// 基金信息
@@ -69,8 +70,8 @@ pub struct FundTrend {
 /// 基金列表
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FundList {
-    /// 列表ID（UUID v4）
-    pub id: String,
+    /// 列表ID（自增整型）
+    pub id: i64,
     /// 列表名称（用户自定义，1-30字符，唯一）
     pub name: String,
     /// 基金代码列表（有序，列表内唯一）
@@ -81,7 +82,7 @@ pub struct FundList {
     #[serde(default)]
     pub updated_at: i64,
     /// 显示位置（用于排序）
-    pub position: usize,
+    pub position: i64,
 }
 
 impl FundList {
@@ -90,10 +91,10 @@ impl FundList {
         self.fund_codes.iter().any(|code| code == fund_code)
     }
 
-    /// 验证列表名称（1-30字符，不能全是空格）
+    /// 验证列表名称（1-64字符，不能全是空格）
     pub fn validate_name(name: &str) -> bool {
         let trimmed = name.trim();
-        !trimmed.is_empty() && trimmed.len() <= 30
+        !trimmed.is_empty() && trimmed.len() <= 64
     }
 }
 
@@ -150,17 +151,28 @@ impl Default for UserData {
 /// 应用状态
 #[derive(Debug)]
 pub struct AppState {
-    /// 存储格式数据
-    pub storage: UserData,
-    /// 存储文件路径
-    pub storage_path: PathBuf,
+    /// SQLite 连接池
+    pub pool: SqlitePool,
+    /// SQLite 文件路径
+    pub db_path: PathBuf,
+    /// 旧版 JSON 存储文件路径
+    pub legacy_json_path: PathBuf,
+    /// 存储异常提示
+    pub storage_warning: Option<String>,
 }
 
 impl AppState {
-    pub fn new(storage: UserData, storage_path: PathBuf) -> Self {
+    pub fn new(
+        pool: SqlitePool,
+        db_path: PathBuf,
+        legacy_json_path: PathBuf,
+        storage_warning: Option<String>,
+    ) -> Self {
         AppState {
-            storage,
-            storage_path,
+            pool,
+            db_path,
+            legacy_json_path,
+            storage_warning,
         }
     }
 }
@@ -183,16 +195,18 @@ mod tests {
     fn test_list_name_validation() {
         assert!(FundList::validate_name("成长型基金"));
         assert!(FundList::validate_name("a"));
-        assert!(FundList::validate_name("0123456789012345678901234567890")); // 30字符
+        assert!(FundList::validate_name("0123456789012345678901234567890")); // 31字符
         assert!(!FundList::validate_name("")); // 空
         assert!(!FundList::validate_name("   ")); // 全空格
-        assert!(!FundList::validate_name("01234567890123456789012345678901")); // 31字符
+        assert!(!FundList::validate_name(
+            "0123456789012345678901234567890123456789012345678901234567890123"
+        )); // 65字符
     }
 
     #[test]
     fn test_fund_list_contains() {
         let list = FundList {
-            id: "test".to_string(),
+            id: 1,
             name: "测试列表".to_string(),
             fund_codes: vec!["001632".to_string(), "014938".to_string()],
             created_at: 0,

@@ -13,30 +13,30 @@ export const createList = (name: string): Promise<FundList> => {
   return invoke("create_list", { name });
 };
 
-export const renameList = (id: string, newName: string): Promise<void> => {
+export const renameList = (id: number, newName: string): Promise<void> => {
   return invoke("rename_list", { id, newName });
 };
 
-export const deleteList = (id: string): Promise<void> => {
+export const deleteList = (id: number): Promise<void> => {
   return invoke("delete_list", { id });
 };
 
-export const addFundToList = (listId: string, fundCode: string): Promise<void> => {
+export const addFundToList = (listId: number, fundCode: string): Promise<void> => {
   return invoke("add_fund_to_list", { listId, fundCode });
 };
 
 export const removeFundFromList = (
-  listId: string,
+  listId: number,
   fundCode: string
 ): Promise<void> => {
   return invoke("remove_fund_from_list", { listId, fundCode });
 };
 
-export const getListFunds = (listId: string): Promise<FundInfo[]> => {
+export const getListFunds = (listId: number): Promise<FundInfo[]> => {
   return invoke("get_list_funds", { listId });
 };
 
-export const getListFundSummaries = (listId: string): Promise<FundSummary[]> => {
+export const getListFundSummaries = (listId: number): Promise<FundSummary[]> => {
   return invoke("get_list_fund_summaries", { listId });
 };
 
@@ -48,6 +48,18 @@ export const getFundTrend = (code: string): Promise<FundTrend> => {
   return invoke("get_fund_trend", { code });
 };
 
-export const reorderLists = (listIds: string[]): Promise<void> => {
+export const getFundAccumTrend = (code: string): Promise<FundTrend> => {
+  return invoke("get_fund_accum_trend", { code });
+};
+
+export const syncFundPingzhong = (code: string): Promise<void> => {
+  return invoke("sync_fund_pingzhong", { code });
+};
+
+export const getStorageWarning = (): Promise<string | null> => {
+  return invoke("get_storage_warning");
+};
+
+export const reorderLists = (listIds: number[]): Promise<void> => {
   return invoke("reorder_lists", { listIds });
 };

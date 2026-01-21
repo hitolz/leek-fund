@@ -1,0 +1,171 @@
+openapi: 3.0.3
+info:
+  title: List Storage API / 列表存储接口
+  version: 1.0.0
+  description: |
+    API contract for list CRUD and list fund membership.
+    用于列表增删改与基金关联的接口契约。
+servers:
+  - url: https://local.app
+paths:
+  /lists:
+    get:
+      summary: List all fund lists / 获取所有基金列表
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FundList'
+    post:
+      summary: Create a list / 创建列表
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateListRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FundList'
+  /lists/{listId}:
+    patch:
+      summary: Rename list / 重命名列表
+      parameters:
+        - in: path
+          name: listId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RenameListRequest'
+      responses:
+        '204':
+          description: No Content
+    delete:
+      summary: Delete list / 删除列表
+      parameters:
+        - in: path
+          name: listId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: No Content
+  /lists/{listId}/funds:
+    get:
+      summary: List funds in list / 获取列表基金
+      parameters:
+        - in: path
+          name: listId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FundEntry'
+    post:
+      summary: Add fund to list / 添加基金到列表
+      parameters:
+        - in: path
+          name: listId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddFundRequest'
+      responses:
+        '204':
+          description: No Content
+    delete:
+      summary: Remove fund from list / 从列表移除基金
+      parameters:
+        - in: path
+          name: listId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RemoveFundRequest'
+      responses:
+        '204':
+          description: No Content
+components:
+  schemas:
+    FundList:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        position:
+          type: integer
+        created_at:
+          type: integer
+        updated_at:
+          type: integer
+      required: [id, name, position, created_at, updated_at]
+    FundEntry:
+      type: object
+      properties:
+        list_id:
+          type: integer
+        fund_code:
+          type: string
+          pattern: '^[0-9]{6}$'
+        position:
+          type: integer
+      required: [list_id, fund_code, position]
+    CreateListRequest:
+      type: object
+      properties:
+        name:
+          type: string
+      required: [name]
+    RenameListRequest:
+      type: object
+      properties:
+        new_name:
+          type: string
+      required: [new_name]
+    AddFundRequest:
+      type: object
+      properties:
+        fund_code:
+          type: string
+          pattern: '^[0-9]{6}$'
+      required: [fund_code]
+    RemoveFundRequest:
+      type: object
+      properties:
+        fund_code:
+          type: string
+          pattern: '^[0-9]{6}$'
+      required: [fund_code]

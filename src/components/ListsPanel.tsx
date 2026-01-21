@@ -4,8 +4,8 @@ import { useTauriCommands } from "../hooks/useTauriCommands";
 
 interface ListsPanelProps {
   lists: FundList[];
-  selectedListId: string | null;
-  onSelectList: (id: string) => void;
+  selectedListId: number | null;
+  onSelectList: (id: number | null) => void;
   onListsChange: () => void;
   showToast?: (message: string, type: "success" | "error") => void;
 }
@@ -86,7 +86,7 @@ export const ListsPanel: React.FC<ListsPanelProps> = ({
         showToast("列表已删除", "success");
       }
       if (selectedListId === id) {
-        onSelectList("");
+        onSelectList(null);
       }
       onListsChange();
     } catch (error) {
@@ -108,7 +108,7 @@ export const ListsPanel: React.FC<ListsPanelProps> = ({
           value={newListName}
           onChange={(e) => setNewListName(e.target.value)}
           placeholder="新建列表"
-          maxLength={30}
+          maxLength={64}
           className="list-name-input"
           disabled={creating}
           onKeyPress={(e) => {
@@ -146,7 +146,7 @@ export const ListsPanel: React.FC<ListsPanelProps> = ({
                     type="text"
                     value={editingName}
                     onChange={(e) => setEditingName(e.target.value)}
-                    maxLength={30}
+                    maxLength={64}
                     className="list-name-input-inline"
                     autoFocus
                     onKeyPress={(e) => {
@@ -215,4 +215,3 @@ export const ListsPanel: React.FC<ListsPanelProps> = ({
     </div>
   );
 };
-

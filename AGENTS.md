@@ -38,7 +38,9 @@ Rust 1.70+、TypeScript（React 18）：遵循标准约定
   001-fund-tracker-client：新增 Rust + Tauri + React 客户端技术栈及初始规格。
 
 <!-- MANUAL ADDITIONS START -->
+生成的文档如果是英文的，需要按段落翻译为中文，段落对应。
+跟我对话优先使用中文。
 <!-- MANUAL ADDITIONS END -->
 
 
-生成的文档如果是英文的，需要按段落翻译为中文，段落对应
+

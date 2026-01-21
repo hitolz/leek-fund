@@ -23,7 +23,38 @@
   overflow: auto;
 }
 
-.middle-section,
+.left-section.collapsed {
+  width: 36px;
+  min-width: 36px;
+  max-width: 36px;
+  padding: 8px 6px;
+  resize: none;
+}
+
+.left-toggle-btn {
+  border: 1px solid #e8e8e8;
+  background: #fff;
+  color: #666;
+  border-radius: 6px;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+}
+
+.left-toggle-btn:hover {
+  border-color: #40a9ff;
+  color: #40a9ff;
+}
+
+.middle-section {
+  width: 360px;
+  min-width: 260px;
+  max-width: 640px;
+  resize: horizontal;
+  overflow: auto;
+  flex: 0 0 auto;
+}
+
 .right-section {
   flex: 1;
   min-width: 0;
@@ -234,6 +265,7 @@
   display: flex;
   gap: 8px;
   margin: 12px 0 16px;
+  flex-wrap: wrap;
 }
 
 .list-add-input {
@@ -251,6 +283,17 @@
   background: #1890ff;
   color: white;
   cursor: pointer;
+}
+
+@media (max-width: 520px) {
+  .list-add-fund {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn-add-inline {
+    width: 100%;
+  }
 }
 
 .btn-add-inline:hover:not(:disabled) {
@@ -464,13 +507,56 @@
 .funds-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
+}
+
+.fund-sort {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: #666;
+  padding: 8px 10px;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+.fund-sort-label {
+  font-size: 12px;
+  color: #8c8c8c;
+}
+
+.fund-sort-select {
+  padding: 6px 10px;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 12px;
+  color: #333;
+}
+
+.fund-sort-btn {
+  padding: 6px 10px;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.fund-sort-btn.active {
+  border-color: #1890ff;
+  color: #1890ff;
+  background: #e6f7ff;
 }
 
 .fund-row {
   border: 1px solid #e8e8e8;
   border-radius: 8px;
-  padding: 12px;
+  padding: 6px 8px;
   background: white;
   text-align: left;
   cursor: pointer;
@@ -491,12 +577,24 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 8px;
 }
 
 .fund-row-title {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 1px;
+}
+
+.fund-row .fund-code {
+  font-size: 10px;
+  padding: 2px 5px;
+}
+
+.fund-row .fund-name {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.15;
 }
 
 .fund-change.positive {
@@ -548,6 +646,12 @@
   gap: 12px;
 }
 
+.fund-trend-stack {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
 .fund-metric {
   padding: 12px;
   background: #fafafa;
@@ -563,6 +667,13 @@
   border-radius: 8px;
   padding: 12px;
   background: #fafafa;
+  position: relative;
+}
+
+.fund-trend svg {
+  width: 100%;
+  height: 200px;
+  display: block;
 }
 
 .fund-trend.empty {
@@ -583,4 +694,56 @@
 .fund-trend-window {
   font-size: 12px;
   color: #999;
+}
+
+.fund-trend-window-abs {
+  position: absolute;
+  right: 12px;
+  bottom: 8px;
+  font-size: 10px;
+  color: #aaa;
+}
+
+.fund-trend-tooltip {
+  position: absolute;
+  min-width: 120px;
+  padding: 6px 8px;
+  background: #fff;
+  border: 1px solid #e6e6e6;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  font-size: 11px;
+  color: #333;
+  pointer-events: none;
+}
+
+.fund-trend-tooltip-date {
+  color: #666;
+}
+
+.fund-trend-tooltip-value {
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.fund-trend-axis {
+  font-size: 10px;
+  fill: #999;
+}
+
+.fund-trend-grid {
+  stroke: #eee;
+  stroke-width: 1;
+}
+
+.fund-trend-hover-line {
+  stroke: #bfbfbf;
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.fund-trend-hover-dot {
+  fill: #fff;
+  stroke: #555;
+  stroke-width: 1;
 }

@@ -5,6 +5,7 @@ mod commands;
 mod errors;
 mod models;
 mod modules;
+mod migrations;
 
 use models::AppState;
 use modules::storage;
@@ -15,17 +16,12 @@ fn main() {
     tauri::Builder::default()
         .setup(|app| {
             // 初始化存储
-            let storage_path =
-                storage::init_storage(&app.handle()).expect("Failed to initialize storage");
-
-            // 加载数据
-            let storage_data = storage::load_data(&storage_path).unwrap_or_else(|e| {
-                eprintln!("Failed to load data: {}. Starting with empty state.", e);
-                models::UserData::new()
-            });
+            let (pool, db_path, legacy_json_path, warning) =
+                tauri::async_runtime::block_on(storage::init_storage(&app.handle()))
+                    .expect("Failed to initialize storage");
 
             // 创建应用状态
-            let app_state = AppState::new(storage_data, storage_path);
+            let app_state = AppState::new(pool, db_path, legacy_json_path, warning);
 
             // 管理状态
             app.manage(Mutex::new(app_state));
@@ -44,6 +40,9 @@ fn main() {
             commands::get_list_fund_summaries,
             commands::get_fund_detail,
             commands::get_fund_trend,
+            commands::get_fund_accum_trend,
+            commands::sync_fund_pingzhong,
+            commands::get_storage_warning,
             commands::reorder_lists,
         ])
         .run(tauri::generate_context!())

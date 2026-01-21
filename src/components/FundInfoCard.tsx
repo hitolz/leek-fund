@@ -15,7 +15,7 @@ export const FundInfoCard: React.FC<FundInfoCardProps> = ({
   showToast,
   onListsChange,
 }) => {
-  const [selectedListId, setSelectedListId] = useState("");
+  const [selectedListId, setSelectedListId] = useState<number | null>(null);
   const [adding, setAdding] = useState(false);
   const { addFundToList } = useTauriCommands();
 
@@ -28,7 +28,7 @@ export const FundInfoCard: React.FC<FundInfoCardProps> = ({
   }
 
   const handleAddToList = async () => {
-    if (!selectedListId) {
+    if (selectedListId === null) {
       if (showToast) {
         showToast("请选择一个列表", "error");
       }
@@ -41,7 +41,7 @@ export const FundInfoCard: React.FC<FundInfoCardProps> = ({
       if (showToast) {
         showToast("已添加到列表", "success");
       }
-      setSelectedListId("");
+      setSelectedListId(null);
       onListsChange();
     } catch (error) {
       if (showToast) {
@@ -82,8 +82,10 @@ export const FundInfoCard: React.FC<FundInfoCardProps> = ({
 
       <div className="add-to-list-section">
         <select
-          value={selectedListId}
-          onChange={(e) => setSelectedListId(e.target.value)}
+          value={selectedListId ?? ""}
+          onChange={(e) =>
+            setSelectedListId(e.target.value ? Number(e.target.value) : null)
+          }
           className="list-selector"
           disabled={adding || lists.length === 0}
         >
@@ -97,7 +99,7 @@ export const FundInfoCard: React.FC<FundInfoCardProps> = ({
 
         <button
           onClick={handleAddToList}
-          disabled={!selectedListId || adding}
+          disabled={selectedListId === null || adding}
           className="btn-add"
         >
           {adding ? "添加中..." : "添加到列表"}
