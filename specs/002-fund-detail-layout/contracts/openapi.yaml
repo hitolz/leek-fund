@@ -1,0 +1,164 @@
+openapi: 3.0.3
+info:
+  title: Fund Detail Layout API / 基金详情布局接口
+  version: 1.0.0
+  description: |
+    API contract for list selection, fund summaries, and fund detail/trend panels.
+    用于列表选择、基金摘要与基金详情/走势面板的接口契约。
+servers:
+  - url: https://local.app
+paths:
+  /lists:
+    get:
+      summary: List all fund lists / 获取所有基金列表
+      description: |
+        Returns user-defined fund lists for the left column.
+        返回左侧展示的用户基金列表。
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FundList'
+  /lists/{listId}/funds:
+    get:
+      summary: List funds in a list / 获取列表中的基金
+      description: |
+        Returns fund summaries for the middle column.
+        返回中间列展示的基金摘要。
+      parameters:
+        - in: path
+          name: listId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FundSummary'
+  /funds/{code}:
+    get:
+      summary: Get fund detail / 获取基金详情
+      description: |
+        Returns detailed fund information for the right column.
+        返回右侧面板所需的基金详情。
+      parameters:
+        - in: path
+          name: code
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9]{6}$'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FundDetail'
+  /funds/{code}/trend:
+    get:
+      summary: Get fund trend / 获取基金走势
+      description: |
+        Returns trend points for the right-column chart.
+        返回右侧走势图所需的走势点。
+      parameters:
+        - in: path
+          name: code
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9]{6}$'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FundTrend'
+components:
+  schemas:
+    FundList:
+      type: object
+      description: Fund list metadata / 基金列表元信息
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        fund_codes:
+          type: array
+          items:
+            type: string
+            pattern: '^[0-9]{6}$'
+      required: [id, name, fund_codes]
+    FundSummary:
+      type: object
+      description: Fund summary for list view / 列表视图的基金摘要
+      properties:
+        code:
+          type: string
+          pattern: '^[0-9]{6}$'
+        name:
+          type: string
+        daily_change:
+          type: number
+        daily_change_percent:
+          type: number
+        as_of:
+          type: string
+          format: date-time
+      required: [code, name, as_of]
+    FundDetail:
+      type: object
+      description: Fund detail data / 基金详情数据
+      properties:
+        code:
+          type: string
+          pattern: '^[0-9]{6}$'
+        name:
+          type: string
+        net_value:
+          type: number
+        net_value_date:
+          type: string
+          format: date
+        daily_change:
+          type: number
+        daily_change_percent:
+          type: number
+        as_of:
+          type: string
+          format: date-time
+      required: [code, name, as_of]
+    FundTrend:
+      type: object
+      description: Trend data points / 走势数据点
+      properties:
+        code:
+          type: string
+          pattern: '^[0-9]{6}$'
+        window:
+          type: string
+        points:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrendPoint'
+      required: [code, window, points]
+    TrendPoint:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        value:
+          type: number
+      required: [date, value]

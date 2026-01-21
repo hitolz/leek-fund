@@ -1,0 +1,220 @@
+openapi: 3.0.3
+info:
+  title: Fund Tracker API (Internal)
+  title_zh: 基金追踪 API（内部）
+  version: 1.0.0
+  description: REST-style contract for fund lookup and list management.
+  description_zh: 用于基金查询与列表管理的 REST 风格契约。
+servers:
+  - url: http://localhost
+paths:
+  /funds/{code}:
+    get:
+      summary: Get fund info by code
+      summary_zh: 按代码获取基金信息
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: "^[0-9]{6}$"
+      responses:
+        "200":
+          description: Fund info
+          description_zh: 基金信息
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FundInfo"
+        "400":
+          description: Invalid code
+          description_zh: 无效代码
+        "404":
+          description: Fund not found
+          description_zh: 未找到基金
+  /lists:
+    get:
+      summary: List all fund lists
+      summary_zh: 获取所有基金列表
+      responses:
+        "200":
+          description: Fund lists
+          description_zh: 基金列表
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FundList"
+    post:
+      summary: Create a fund list
+      summary_zh: 创建基金列表
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 30
+      responses:
+        "201":
+          description: Created list
+          description_zh: 列表已创建
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FundList"
+        "409":
+          description: Duplicate list name
+          description_zh: 列表名称重复
+  /lists/{id}:
+    patch:
+      summary: Rename a list
+      summary_zh: 重命名列表
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [new_name]
+              properties:
+                new_name:
+                  type: string
+                  minLength: 1
+                  maxLength: 30
+      responses:
+        "204":
+          description: Renamed
+          description_zh: 已重命名
+    delete:
+      summary: Delete a list
+      summary_zh: 删除列表
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+          description_zh: 已删除
+  /lists/{id}/funds:
+    get:
+      summary: Get funds in a list
+      summary_zh: 获取列表内基金
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Fund list entries
+          description_zh: 基金列表条目
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FundInfo"
+    post:
+      summary: Add a fund to a list
+      summary_zh: 向列表添加基金
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fund_code]
+              properties:
+                fund_code:
+                  type: string
+                  pattern: "^[0-9]{6}$"
+      responses:
+        "204":
+          description: Added
+          description_zh: 已添加
+        "409":
+          description: Duplicate fund
+          description_zh: 基金重复
+  /lists/{id}/funds/{code}:
+    delete:
+      summary: Remove a fund from a list
+      summary_zh: 从列表移除基金
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: "^[0-9]{6}$"
+      responses:
+        "204":
+          description: Removed
+          description_zh: 已移除
+components:
+  schemas:
+    FundInfo:
+      type: object
+      required: [code, name]
+      properties:
+        code:
+          type: string
+          pattern: "^[0-9]{6}$"
+        name:
+          type: string
+        net_value:
+          type: number
+          nullable: true
+        change_percent:
+          type: string
+          nullable: true
+        update_time:
+          type: string
+          nullable: true
+    FundList:
+      type: object
+      required: [id, name, fund_codes, created_at, updated_at, position]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        fund_codes:
+          type: array
+          items:
+            type: string
+            pattern: "^[0-9]{6}$"
+        created_at:
+          type: integer
+        updated_at:
+          type: integer
+        position:
+          type: integer
