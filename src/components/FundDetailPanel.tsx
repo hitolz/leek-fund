@@ -1,6 +1,7 @@
 import React from "react";
-import { FundDetail, FundTrend } from "../types";
+import { FundDetail, FundTrend, Holding } from "../types";
 import { FundTrendChart } from "./FundTrendChart";
+import { HoldingForm } from "./HoldingForm";
 
 interface FundDetailPanelProps {
   detail: FundDetail | null;
@@ -8,6 +9,11 @@ interface FundDetailPanelProps {
   accumTrend: FundTrend | null;
   loading: boolean;
   error: string | null;
+  holding: Holding | null;
+  holdingLoading: boolean;
+  holdingError: string | null;
+  onSaveHolding: (amount: number, shares: number) => void;
+  onClearHolding: () => void;
 }
 
 export const FundDetailPanel: React.FC<FundDetailPanelProps> = ({
@@ -16,6 +22,11 @@ export const FundDetailPanel: React.FC<FundDetailPanelProps> = ({
   accumTrend,
   loading,
   error,
+  holding,
+  holdingLoading,
+  holdingError,
+  onSaveHolding,
+  onClearHolding,
 }) => {
   if (loading) {
     return (
@@ -69,6 +80,16 @@ export const FundDetailPanel: React.FC<FundDetailPanelProps> = ({
           </span>
         </div>
       </div>
+
+      <HoldingForm
+        holdingAmount={holding?.holding_amount ?? detail.holding_amount ?? null}
+        holdingShares={holding?.holding_shares ?? detail.holding_shares ?? null}
+        dailyChangeAmount={detail.daily_change_amount ?? null}
+        loading={holdingLoading}
+        error={holdingError}
+        onSave={onSaveHolding}
+        onClear={onClearHolding}
+      />
 
       <div className="fund-trend-stack">
         <FundTrendChart

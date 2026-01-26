@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { FundTrend } from "../types";
 
 interface FundTrendChartProps {
@@ -8,14 +8,12 @@ interface FundTrendChartProps {
   valueFormatter?: (value: number) => string;
 }
 
-const CHART_WIDTH = 360;
-const CHART_HEIGHT = 200;
 const PADDING_LEFT = 44;
 const PADDING_RIGHT = 10;
 const PADDING_TOP = 10;
 const PADDING_BOTTOM = 34;
 const TICK_COUNT = 4;
-const X_TICK_COUNT = 4;
+const X_TICK_COUNT = 6;
 
 export const FundTrendChart: React.FC<FundTrendChartProps> = ({
   trend,
@@ -28,7 +26,24 @@ export const FundTrendChart: React.FC<FundTrendChartProps> = ({
   const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(
     null
   );
+  const [chartSize, setChartSize] = useState({ width: 420, height: 260 });
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
+
+  useEffect(() => {
+    const element = containerRef.current;
+    if (!element) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        if (width > 0 && height > 0) {
+          setChartSize({ width, height });
+        }
+      }
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
 
   const metrics = useMemo(() => {
     if (points.length === 0) {
@@ -38,10 +53,10 @@ export const FundTrendChart: React.FC<FundTrendChartProps> = ({
     const min = Math.min(...values);
     const max = Math.max(...values);
     const range = max - min || 1;
-    const innerWidth = CHART_WIDTH - PADDING_LEFT - PADDING_RIGHT;
-    const innerHeight = CHART_HEIGHT - PADDING_TOP - PADDING_BOTTOM;
+    const innerWidth = chartSize.width - PADDING_LEFT - PADDING_RIGHT;
+    const innerHeight = chartSize.height - PADDING_TOP - PADDING_BOTTOM;
     return { min, max, range, innerWidth, innerHeight };
-  }, [points]);
+  }, [points, chartSize.width, chartSize.height]);
 
   const pathD = useMemo(() => {
     if (!metrics || points.length === 0) return "";
@@ -96,14 +111,17 @@ export const FundTrendChart: React.FC<FundTrendChartProps> = ({
 
   const handleMouseMove = (event: React.MouseEvent<SVGSVGElement>) => {
     if (!metrics || points.length === 0) return;
-    const rect = svgRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const x = event.clientX - rect.left;
+    const { width, height } = chartSize;
+    if (width <= 0 || height <= 0) return;
+    const x = event.nativeEvent.offsetX;
+    const paddingLeftPx = PADDING_LEFT;
+    const paddingRightPx = PADDING_RIGHT;
+    const innerWidthPx = width - paddingLeftPx - paddingRightPx;
     const clamped = Math.min(
-      CHART_WIDTH - PADDING_RIGHT,
-      Math.max(PADDING_LEFT, x)
+      paddingLeftPx + innerWidthPx,
+      Math.max(paddingLeftPx, x)
     );
-    const ratio = (clamped - PADDING_LEFT) / metrics.innerWidth;
+    const ratio = innerWidthPx > 0 ? (clamped - paddingLeftPx) / innerWidthPx : 0;
     const index = Math.round(ratio * (points.length - 1));
     setHoverIndex(index);
 
@@ -116,15 +134,17 @@ export const FundTrendChart: React.FC<FundTrendChartProps> = ({
       metrics.innerHeight -
       ((value - metrics.min) / metrics.range) * metrics.innerHeight;
 
+    const hoverXpx = hoverX;
+    const hoverYpx = hoverY;
     const tooltipWidth = 140;
     const tooltipHeight = 38;
     const left = Math.min(
-      CHART_WIDTH - tooltipWidth,
-      Math.max(0, hoverX + 8)
+      width - tooltipWidth,
+      Math.max(0, hoverXpx + 8)
     );
     const top = Math.min(
-      CHART_HEIGHT - tooltipHeight,
-      Math.max(0, hoverY - tooltipHeight - 6)
+      height - tooltipHeight,
+      Math.max(0, hoverYpx - tooltipHeight - 6)
     );
     setHoverPos({ x: left, y: top });
   };
@@ -147,95 +167,97 @@ export const FundTrendChart: React.FC<FundTrendChartProps> = ({
       <div className="fund-trend-header">
         <span>{title}</span>
       </div>
-      <div className="fund-trend-window-abs">{trend.window}</div>
-      {hoverPoint && hoverPos && (
-        <div
-          className="fund-trend-tooltip"
-          style={{ left: `${hoverPos.x}px`, top: `${hoverPos.y}px` }}
-        >
-          <div className="fund-trend-tooltip-date">{hoverPoint.date}</div>
-          <div className="fund-trend-tooltip-value">
-            {valueFormatter(hoverPoint.value)}
+      <div className="fund-trend-chart-area" ref={containerRef}>
+        <div className="fund-trend-window-abs">{trend.window}</div>
+        {hoverPoint && hoverPos && (
+          <div
+            className="fund-trend-tooltip"
+            style={{ left: `${hoverPos.x}px`, top: `${hoverPos.y}px` }}
+          >
+            <div className="fund-trend-tooltip-date">{hoverPoint.date}</div>
+            <div className="fund-trend-tooltip-value">
+              {valueFormatter(hoverPoint.value)}
+            </div>
           </div>
-        </div>
-      )}
-      <svg
-        width={CHART_WIDTH}
-        height={CHART_HEIGHT}
-        viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
-        aria-label="Fund trend chart"
-        ref={svgRef}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-      >
-        {yTicks.map((tick, index) => (
-          <g key={`${tick.value}-${index}`}>
-            <line
-              x1={PADDING_LEFT}
-              x2={CHART_WIDTH - PADDING_RIGHT}
-              y1={tick.y}
-              y2={tick.y}
-              className="fund-trend-grid"
-            />
+        )}
+        <svg
+          width={chartSize.width}
+          height={chartSize.height}
+          viewBox={`0 0 ${chartSize.width} ${chartSize.height}`}
+          aria-label="Fund trend chart"
+          ref={svgRef}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
+        >
+          {yTicks.map((tick, index) => (
+            <g key={`${tick.value}-${index}`}>
+              <line
+                x1={PADDING_LEFT}
+                x2={chartSize.width - PADDING_RIGHT}
+                y1={tick.y}
+                y2={tick.y}
+                className="fund-trend-grid"
+              />
+              <text
+                x={PADDING_LEFT - 6}
+                y={tick.y + 3}
+                textAnchor="end"
+                className="fund-trend-axis"
+              >
+                {valueFormatter(tick.value)}
+              </text>
+            </g>
+          ))}
+          {xTicks.map((tick, index) => (
             <text
-              x={PADDING_LEFT - 6}
-              y={tick.y + 3}
-              textAnchor="end"
+              key={`${tick.x}-${index}`}
+              x={tick.x}
+              y={chartSize.height - 10}
+              textAnchor={index === 0 ? "start" : index === xTicks.length - 1 ? "end" : "middle"}
               className="fund-trend-axis"
             >
-              {valueFormatter(tick.value)}
+              {formatDateLabel(tick.date)}
             </text>
-          </g>
-        ))}
-        {xTicks.map((tick, index) => (
-          <text
-            key={`${tick.x}-${index}`}
-            x={tick.x}
-            y={CHART_HEIGHT - 10}
-            textAnchor={index === 0 ? "start" : index === xTicks.length - 1 ? "end" : "middle"}
-            className="fund-trend-axis"
-          >
-            {formatDateLabel(tick.date)}
-          </text>
-        ))}
-        <path
-          d={pathD}
-          fill="none"
-          stroke={stroke}
-          strokeWidth="2"
-        />
-        {hoverPoint && metrics && (
-          <g className="fund-trend-hover">
-            <line
-              x1={
-                PADDING_LEFT +
-                (hoverIndex! / (points.length - 1 || 1)) * metrics.innerWidth
-              }
-              x2={
-                PADDING_LEFT +
-                (hoverIndex! / (points.length - 1 || 1)) * metrics.innerWidth
-              }
-              y1={PADDING_TOP}
-              y2={PADDING_TOP + metrics.innerHeight}
-              className="fund-trend-hover-line"
-            />
-            <circle
-              cx={
-                PADDING_LEFT +
-                (hoverIndex! / (points.length - 1 || 1)) * metrics.innerWidth
-              }
-              cy={
-                PADDING_TOP +
-                metrics.innerHeight -
-                ((hoverPoint.value - metrics.min) / metrics.range) *
-                  metrics.innerHeight
-              }
-              r="3"
-              className="fund-trend-hover-dot"
-            />
-          </g>
-        )}
-      </svg>
+          ))}
+          <path
+            d={pathD}
+            fill="none"
+            stroke={stroke}
+            strokeWidth="2"
+          />
+          {hoverPoint && metrics && (
+            <g className="fund-trend-hover">
+              <line
+                x1={
+                  PADDING_LEFT +
+                  (hoverIndex! / (points.length - 1 || 1)) * metrics.innerWidth
+                }
+                x2={
+                  PADDING_LEFT +
+                  (hoverIndex! / (points.length - 1 || 1)) * metrics.innerWidth
+                }
+                y1={PADDING_TOP}
+                y2={PADDING_TOP + metrics.innerHeight}
+                className="fund-trend-hover-line"
+              />
+              <circle
+                cx={
+                  PADDING_LEFT +
+                  (hoverIndex! / (points.length - 1 || 1)) * metrics.innerWidth
+                }
+                cy={
+                  PADDING_TOP +
+                  metrics.innerHeight -
+                  ((hoverPoint.value - metrics.min) / metrics.range) *
+                    metrics.innerHeight
+                }
+                r="3"
+                className="fund-trend-hover-dot"
+              />
+            </g>
+          )}
+        </svg>
+      </div>
     </div>
   );
 };

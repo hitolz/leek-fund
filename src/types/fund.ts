@@ -13,8 +13,9 @@ export interface FundSummary {
   code: string;
   name: string;
   daily_change_percent: string | null;
-  update_time: string | null;
+  daily_change_amount?: number | null;
   holding_amount?: number | null;
+  update_time: string | null;
 }
 
 export interface FundDetail {
@@ -23,6 +24,10 @@ export interface FundDetail {
   net_value: number | null;
   change_percent: string | null;
   update_time: string | null;
+  daily_change_amount?: number | null;
+  holding_amount?: number | null;
+  holding_shares?: number | null;
+  cost_price?: number | null;
 }
 
 export interface TrendPoint {
@@ -34,6 +39,15 @@ export interface FundTrend {
   code: string;
   window: string;
   points: TrendPoint[];
+}
+
+export interface Holding {
+  list_id: number;
+  fund_code: string;
+  holding_amount: number;
+  holding_shares: number;
+  created_at: number;
+  updated_at: number;
 }
 
 /**

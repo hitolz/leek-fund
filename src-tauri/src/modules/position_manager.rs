@@ -14,7 +14,7 @@ pub async fn get_group_fund_position(
     }
 
     let row = sqlx::query(
-        "SELECT shares, unit_price, created_at, updated_at \
+        "SELECT holding_amount, holding_shares, created_at, updated_at \
          FROM group_fund_positions WHERE group_id = ? AND fund_code = ?",
     )
     .bind(list_id)
@@ -26,8 +26,8 @@ pub async fn get_group_fund_position(
     Ok(row.map(|row| GroupFundPosition {
         list_id,
         fund_code: fund_code.to_string(),
-        shares: row.try_get("shares").unwrap_or(0.0),
-        unit_price: row.try_get("unit_price").ok(),
+        holding_amount: row.try_get("holding_amount").unwrap_or(0.0),
+        holding_shares: row.try_get("holding_shares").unwrap_or(0.0),
         created_at: row.try_get("created_at").unwrap_or(0),
         updated_at: row.try_get("updated_at").unwrap_or(0),
     }))
@@ -37,34 +37,35 @@ pub async fn set_group_fund_position(
     pool: &SqlitePool,
     list_id: i64,
     fund_code: &str,
-    shares: f64,
-    unit_price: Option<f64>,
+    holding_amount: f64,
+    holding_shares: f64,
 ) -> AppResult<GroupFundPosition> {
     ensure_list_exists(pool, list_id).await?;
     if !FundInfo::validate_code(fund_code) {
         return Err(AppError::ValidationError("基金代码格式错误".to_string()));
     }
-    if !shares.is_finite() || shares <= 0.0 {
-        return Err(AppError::ValidationError("持仓份额无效".to_string()));
+    let holding_amount = round_two_decimals(holding_amount);
+    let holding_shares = round_two_decimals(holding_shares);
+
+    if !holding_amount.is_finite() || holding_amount < 0.0 {
+        return Err(AppError::ValidationError("持仓金额无效".to_string()));
     }
-    if let Some(price) = unit_price {
-        if !price.is_finite() || price < 0.0 {
-            return Err(AppError::ValidationError("成本价无效".to_string()));
-        }
+    if !holding_shares.is_finite() || holding_shares < 0.0 {
+        return Err(AppError::ValidationError("持仓份额无效".to_string()));
     }
 
     let now = Utc::now().timestamp();
     sqlx::query(
         "INSERT INTO group_fund_positions \
-        (group_id, fund_code, shares, unit_price, created_at, updated_at) \
+        (group_id, fund_code, holding_amount, holding_shares, created_at, updated_at) \
         VALUES (?, ?, ?, ?, ?, ?) \
         ON CONFLICT(group_id, fund_code) DO UPDATE SET \
-        shares = excluded.shares, unit_price = excluded.unit_price, updated_at = excluded.updated_at",
+        holding_amount = excluded.holding_amount, holding_shares = excluded.holding_shares, updated_at = excluded.updated_at",
     )
     .bind(list_id)
     .bind(fund_code)
-    .bind(shares)
-    .bind(unit_price)
+    .bind(holding_amount)
+    .bind(holding_shares)
     .bind(now)
     .bind(now)
     .execute(pool)
@@ -74,11 +75,15 @@ pub async fn set_group_fund_position(
     Ok(GroupFundPosition {
         list_id,
         fund_code: fund_code.to_string(),
-        shares,
-        unit_price,
+        holding_amount,
+        holding_shares,
         created_at: now,
         updated_at: now,
     })
+}
+
+fn round_two_decimals(value: f64) -> f64 {
+    (value * 100.0).round() / 100.0
 }
 
 pub async fn clear_group_fund_position(

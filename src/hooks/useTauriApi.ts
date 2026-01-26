@@ -1,5 +1,12 @@
 import { invoke } from "@tauri-apps/api/tauri";
-import { FundDetail, FundInfo, FundList, FundSummary, FundTrend } from "../types";
+import {
+  FundDetail,
+  FundInfo,
+  FundList,
+  FundSummary,
+  FundTrend,
+  Holding,
+} from "../types";
 
 export const searchFund = (code: string): Promise<FundInfo> => {
   return invoke("search_fund", { code });
@@ -40,8 +47,11 @@ export const getListFundSummaries = (listId: number): Promise<FundSummary[]> => 
   return invoke("get_list_fund_summaries", { listId });
 };
 
-export const getFundDetail = (code: string): Promise<FundDetail> => {
-  return invoke("get_fund_detail", { code });
+export const getFundDetail = (
+  listId: number,
+  fundCode: string
+): Promise<FundDetail> => {
+  return invoke("get_list_fund_detail", { listId, fundCode });
 };
 
 export const getFundTrend = (code: string): Promise<FundTrend> => {
@@ -62,4 +72,36 @@ export const getStorageWarning = (): Promise<string | null> => {
 
 export const reorderLists = (listIds: number[]): Promise<void> => {
   return invoke("reorder_lists", { listIds });
+};
+
+export const getHolding = (
+  listId: number,
+  fundCode: string
+): Promise<Holding | null> => {
+  return invoke("get_holding", { listId, fundCode });
+};
+
+export const setHolding = (
+  listId: number,
+  fundCode: string,
+  holdingAmount: number,
+  holdingShares: number
+): Promise<Holding> => {
+  return invoke("set_holding", {
+    listId,
+    fundCode,
+    holdingAmount,
+    holdingShares,
+  });
+};
+
+export const clearHolding = (
+  listId: number,
+  fundCode: string
+): Promise<void> => {
+  return invoke("clear_holding", { listId, fundCode });
+};
+
+export const setRefreshInterval = (intervalMs: number): Promise<void> => {
+  return invoke("set_refresh_interval", { intervalMs });
 };

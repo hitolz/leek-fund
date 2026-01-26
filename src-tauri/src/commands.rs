@@ -1,7 +1,7 @@
 use crate::models::{AppState, FundDetail, FundInfo, FundList, FundSummary, FundTrend};
-use crate::modules::{fund_api, fund_storage, list_manager};
+use crate::modules::{fund_api, fund_storage, list_manager, position_manager};
 use std::sync::Mutex;
-use tauri::State;
+use tauri::{AppHandle, Manager, State};
 
 /// 搜索基金信息
 #[tauri::command]
@@ -109,9 +109,25 @@ pub async fn get_list_fund_summaries(
         .map_err(|e| e.user_message())?;
 
     let mut funds = Vec::new();
+    let pool = state.lock().unwrap().pool.clone();
     for code in fund_codes {
         match fund_api::get_fund_summary(&code).await {
-            Ok(fund) => funds.push(fund),
+            Ok(mut fund) => {
+                let position = match position_manager::get_group_fund_position(&pool, list_id, &code).await {
+                    Ok(position) => position,
+                    Err(err) => {
+                        eprintln!("Failed to load holding position: {}", err.details());
+                        None
+                    }
+                };
+                let holding_amount = position.as_ref().map(|p| p.holding_amount);
+                fund.holding_amount = holding_amount;
+                fund.daily_change_amount = list_manager::compute_daily_change_amount(
+                    &fund.daily_change_percent,
+                    holding_amount,
+                );
+                funds.push(fund);
+            }
             Err(e) => {
                 eprintln!("Failed to fetch fund summary {}: {}", code, e.details());
             }
@@ -123,10 +139,34 @@ pub async fn get_list_fund_summaries(
 
 /// 获取基金详情
 #[tauri::command]
-pub async fn get_fund_detail(code: String) -> Result<FundDetail, String> {
-    fund_api::get_fund_detail(&code)
+pub async fn get_list_fund_detail(
+    state: State<'_, Mutex<AppState>>,
+    list_id: i64,
+    fund_code: String,
+) -> Result<FundDetail, String> {
+    let mut detail = fund_api::get_fund_detail(&fund_code)
         .await
-        .map_err(|e| e.user_message())
+        .map_err(|e| e.user_message())?;
+    let pool = state.lock().unwrap().pool.clone();
+    let position = match position_manager::get_group_fund_position(&pool, list_id, &fund_code).await {
+        Ok(position) => position,
+        Err(err) => {
+            eprintln!("Failed to load holding position: {}", err.details());
+            None
+        }
+    };
+    if let Some(position) = position {
+        detail.holding_amount = Some(position.holding_amount);
+        detail.holding_shares = Some(position.holding_shares);
+        if position.holding_shares > 0.0 {
+            detail.cost_price = Some(position.holding_amount / position.holding_shares);
+        }
+        detail.daily_change_amount = list_manager::compute_daily_change_amount(
+            &detail.change_percent,
+            detail.holding_amount,
+        );
+    }
+    Ok(detail)
 }
 
 /// 获取基金走势
@@ -141,6 +181,53 @@ pub async fn get_fund_trend(code: String) -> Result<FundTrend, String> {
 #[tauri::command]
 pub async fn get_fund_accum_trend(code: String) -> Result<FundTrend, String> {
     fund_api::get_fund_accum_trend(&code)
+        .await
+        .map_err(|e| e.user_message())
+}
+
+/// 获取持仓信息
+#[tauri::command]
+pub async fn get_holding(
+    state: State<'_, Mutex<AppState>>,
+    list_id: i64,
+    fund_code: String,
+) -> Result<Option<crate::models::GroupFundPosition>, String> {
+    let pool = state.lock().unwrap().pool.clone();
+    position_manager::get_group_fund_position(&pool, list_id, &fund_code)
+        .await
+        .map_err(|e| e.user_message())
+}
+
+/// 保存持仓信息
+#[tauri::command]
+pub async fn set_holding(
+    state: State<'_, Mutex<AppState>>,
+    list_id: i64,
+    fund_code: String,
+    holding_amount: f64,
+    holding_shares: f64,
+) -> Result<crate::models::GroupFundPosition, String> {
+    let pool = state.lock().unwrap().pool.clone();
+    position_manager::set_group_fund_position(
+        &pool,
+        list_id,
+        &fund_code,
+        holding_amount,
+        holding_shares,
+    )
+    .await
+    .map_err(|e| e.user_message())
+}
+
+/// 清空持仓信息
+#[tauri::command]
+pub async fn clear_holding(
+    state: State<'_, Mutex<AppState>>,
+    list_id: i64,
+    fund_code: String,
+) -> Result<(), String> {
+    let pool = state.lock().unwrap().pool.clone();
+    position_manager::clear_group_fund_position(&pool, list_id, &fund_code)
         .await
         .map_err(|e| e.user_message())
 }
@@ -177,4 +264,34 @@ pub async fn reorder_lists(
 pub fn get_storage_warning(state: State<'_, Mutex<AppState>>) -> Option<String> {
     let state = state.lock().unwrap();
     state.storage_warning.clone()
+}
+
+const REFRESH_MENU_ITEMS: &[(u64, &str)] = &[
+    (10_000, "refresh_10s"),
+    (30_000, "refresh_30s"),
+    (60_000, "refresh_60s"),
+    (120_000, "refresh_120s"),
+];
+
+pub fn update_refresh_menu_selection(
+    app: &AppHandle,
+    interval_ms: u64,
+) -> Result<(), String> {
+    let window = app
+        .get_window("main")
+        .ok_or_else(|| "主窗口未找到".to_string())?;
+    let menu = window.menu_handle();
+    for (ms, id) in REFRESH_MENU_ITEMS {
+        if let Some(item) = menu.try_get_item(*id) {
+            item.set_selected(*ms == interval_ms)
+                .map_err(|e| e.to_string())?;
+        }
+    }
+    Ok(())
+}
+
+/// 设置菜单栏刷新选项
+#[tauri::command]
+pub fn set_refresh_interval(app: AppHandle, interval_ms: u64) -> Result<(), String> {
+    update_refresh_menu_selection(&app, interval_ms)
 }

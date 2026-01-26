@@ -2,6 +2,7 @@ import {
   addFundToList,
   createList,
   deleteList,
+  getHolding,
   getFundDetail,
   getFundTrend,
   getFundAccumTrend,
@@ -14,6 +15,9 @@ import {
   reorderLists,
   removeFundFromList,
   searchFund,
+  setHolding,
+  clearHolding,
+  setRefreshInterval,
 } from "./useTauriApi";
 
 export function useTauriCommands() {
@@ -33,5 +37,9 @@ export function useTauriCommands() {
     syncFundPingzhong,
     getStorageWarning,
     reorderLists,
+    getHolding,
+    setHolding,
+    clearHolding,
+    setRefreshInterval,
   };
 }

@@ -18,3 +18,34 @@ export const getChangeClass = (value: string | null) => {
   if (numeric < 0) return "negative";
   return "neutral";
 };
+
+export const getChangeClassFromNumber = (value: number | null | undefined) => {
+  if (value === null || value === undefined || !Number.isFinite(value)) {
+    return "neutral";
+  }
+  if (value > 0) return "positive";
+  if (value < 0) return "negative";
+  return "neutral";
+};
+
+export const formatCurrency = (value: number | null | undefined) => {
+  if (value === null || value === undefined || !Number.isFinite(value)) {
+    return "--";
+  }
+  return value.toFixed(2);
+};
+
+export const formatSignedCurrency = (value: number | null | undefined) => {
+  if (value === null || value === undefined || !Number.isFinite(value)) {
+    return "--";
+  }
+  const sign = value > 0 ? "+" : "";
+  return `${sign}${value.toFixed(2)}`;
+};
+
+export const formatPercentNumber = (value: number | null | undefined) => {
+  if (value === null || value === undefined || !Number.isFinite(value)) {
+    return "--";
+  }
+  return `${value.toFixed(2)}%`;
+};

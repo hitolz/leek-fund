@@ -2,22 +2,38 @@ import React from "react";
 import { FundSummary } from "../types";
 import {
   formatChangePercent,
-  formatTimestamp,
+  formatCurrency,
+  formatSignedCurrency,
   getChangeClass,
+  getChangeClassFromNumber,
 } from "../utils/formatters";
 
 interface ListDetailProps {
   fund: FundSummary;
   selected: boolean;
   onSelect: (code: string) => void;
+  sortKey: "holding_amount" | "daily_change_percent" | "daily_change_amount";
 }
 
 export const ListDetail: React.FC<ListDetailProps> = ({
   fund,
   selected,
   onSelect,
+  sortKey,
 }) => {
-  const changeClass = getChangeClass(fund.daily_change_percent);
+  const displayValue =
+    sortKey === "holding_amount"
+      ? formatCurrency(fund.holding_amount ?? null)
+      : sortKey === "daily_change_amount"
+        ? formatSignedCurrency(fund.daily_change_amount ?? null)
+        : formatChangePercent(fund.daily_change_percent);
+
+  const changeClass =
+    sortKey === "daily_change_amount"
+      ? getChangeClassFromNumber(fund.daily_change_amount ?? null)
+      : sortKey === "holding_amount"
+        ? "neutral"
+        : getChangeClass(fund.daily_change_percent);
 
   return (
     <button
@@ -31,7 +47,7 @@ export const ListDetail: React.FC<ListDetailProps> = ({
           <span className="fund-name">{fund.name}</span>
         </div>
         <span className={`fund-change ${changeClass}`}>
-          {formatChangePercent(fund.daily_change_percent)}
+          {displayValue}
         </span>
       </div>
     </button>

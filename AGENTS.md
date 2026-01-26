@@ -40,6 +40,7 @@ Rust 1.70+、TypeScript（React 18）：遵循标准约定
 <!-- MANUAL ADDITIONS START -->
 生成的文档如果是英文的，需要按段落翻译为中文，段落对应。
 跟我对话优先使用中文。
+生成完成后保证编译通过，如果不通过尝试修改。
 <!-- MANUAL ADDITIONS END -->
 
 

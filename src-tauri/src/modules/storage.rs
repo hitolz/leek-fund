@@ -4,7 +4,7 @@ use chrono::Utc;
 use crate::migrations;
 use serde::Deserialize;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
-use sqlx::SqlitePool;
+use sqlx::{Row, SqlitePool};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -28,6 +28,7 @@ pub async fn init_storage(
     let (pool, warning) = open_or_recover_db(&db_path).await?;
 
     run_migrations(&pool).await?;
+    ensure_group_fund_positions_schema(&pool).await?;
 
     if should_migrate(&pool, &legacy_json_path).await? {
         migrate_from_json(&pool, &legacy_json_path).await?;
@@ -39,7 +40,7 @@ pub async fn init_storage(
 async fn open_or_recover_db(db_path: &Path) -> AppResult<(SqlitePool, Option<String>)> {
     match open_pool(db_path).await {
         Ok(pool) => Ok((pool, None)),
-        Err(err) => {
+        Err(_) => {
             let warning = if db_path.exists() {
                 let backup = backup_corrupted_db(db_path)?;
                 Some(format!(
@@ -68,18 +69,78 @@ async fn open_pool(db_path: &Path) -> AppResult<SqlitePool> {
 }
 
 async fn run_migrations(pool: &SqlitePool) -> AppResult<()> {
-    let sql = migrations::load_init_sql()?;
+    let migration_sqls = migrations::load_migration_sqls()?;
 
-    for statement in sql.split(';') {
-        let stmt = statement.trim();
-        if stmt.is_empty() {
-            continue;
+    for sql in migration_sqls {
+        for statement in sql.split(';') {
+            let stmt = statement.trim();
+            if stmt.is_empty() {
+                continue;
+            }
+            sqlx::query(stmt)
+                .execute(pool)
+                .await
+                .map_err(|e| AppError::StorageError(format!("迁移执行失败: {}", e)))?;
         }
-        sqlx::query(stmt)
+    }
+
+    Ok(())
+}
+
+async fn ensure_group_fund_positions_schema(pool: &SqlitePool) -> AppResult<()> {
+    let exists: Option<String> = sqlx::query_scalar(
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'group_fund_positions'",
+    )
+    .fetch_optional(pool)
+    .await
+    .map_err(|e| AppError::StorageError(format!("数据库读取失败: {}", e)))?;
+    if exists.is_none() {
+        return Ok(());
+    }
+
+    let columns: Vec<String> = sqlx::query("PRAGMA table_info('group_fund_positions')")
+        .fetch_all(pool)
+        .await
+        .map_err(|e| AppError::StorageError(format!("数据库读取失败: {}", e)))?
+        .into_iter()
+        .filter_map(|row| row.try_get::<String, _>("name").ok())
+        .collect();
+
+    if !columns.iter().any(|name| name == "holding_amount") {
+        sqlx::query("ALTER TABLE group_fund_positions ADD COLUMN holding_amount REAL")
             .execute(pool)
             .await
             .map_err(|e| AppError::StorageError(format!("迁移执行失败: {}", e)))?;
     }
+
+    if !columns.iter().any(|name| name == "holding_shares") {
+        sqlx::query("ALTER TABLE group_fund_positions ADD COLUMN holding_shares REAL")
+            .execute(pool)
+            .await
+            .map_err(|e| AppError::StorageError(format!("迁移执行失败: {}", e)))?;
+    }
+
+    if columns.iter().any(|name| name == "shares") {
+        sqlx::query(
+            "UPDATE group_fund_positions \
+             SET holding_shares = COALESCE(holding_shares, shares), \
+                 holding_amount = COALESCE(holding_amount, shares * unit_price) \
+             WHERE holding_shares IS NULL OR holding_amount IS NULL",
+        )
+        .execute(pool)
+        .await
+        .map_err(|e| AppError::StorageError(format!("数据库写入失败: {}", e)))?;
+    }
+
+    sqlx::query(
+        "UPDATE group_fund_positions \
+         SET holding_shares = COALESCE(holding_shares, 0), \
+             holding_amount = COALESCE(holding_amount, 0) \
+         WHERE holding_shares IS NULL OR holding_amount IS NULL",
+    )
+    .execute(pool)
+    .await
+    .map_err(|e| AppError::StorageError(format!("数据库写入失败: {}", e)))?;
 
     Ok(())
 }

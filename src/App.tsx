@@ -2,15 +2,19 @@ import { useEffect, useState } from "react";
 import { ListsPanel } from "./components/ListsPanel";
 import { ListDetailView } from "./components/ListDetailView";
 import { useTauriCommands } from "./hooks/useTauriCommands";
-import { FundDetail, FundList, FundTrend } from "./types";
+import { FundDetail, FundList, FundTrend, Holding } from "./types";
 import { useToast } from "./components/ToastContext";
 import { FundDetailPanel } from "./components/FundDetailPanel";
 import "./App.css";
 
 interface AppProps {
   globalRefreshMs: number;
-  onChangeGlobalRefreshMs: (value: number) => void;
 }
+
+type FundSortKey =
+  | "holding_amount"
+  | "daily_change_percent"
+  | "daily_change_amount";
 
 function App({ globalRefreshMs }: AppProps) {
   const showToast = useToast();
@@ -23,14 +27,34 @@ function App({ globalRefreshMs }: AppProps) {
   const [fundAccumTrend, setFundAccumTrend] = useState<FundTrend | null>(null);
   const [fundDetailLoading, setFundDetailLoading] = useState(false);
   const [fundDetailError, setFundDetailError] = useState<string | null>(null);
+  const [holding, setHolding] = useState<Holding | null>(null);
+  const [holdingLoading, setHoldingLoading] = useState(false);
+  const [holdingError, setHoldingError] = useState<string | null>(null);
+  const [holdingVersion, setHoldingVersion] = useState(0);
   const [leftCollapsed, setLeftCollapsed] = useState(false);
+  const [sortKey, setSortKey] =
+    useState<FundSortKey>("daily_change_percent");
+  const [sortOrder, setSortOrder] = useState<"none" | "asc" | "desc">("desc");
   const {
     getAllLists,
     getFundDetail,
     getFundTrend,
     getFundAccumTrend,
     getStorageWarning,
+    getHolding,
+    setHolding: saveHolding,
+    clearHolding,
   } = useTauriCommands();
+
+  const reloadDetail = async () => {
+    if (!selectedFundCode || selectedListId === null) return;
+    try {
+      const detail = await getFundDetail(selectedListId, selectedFundCode);
+      setFundDetail(detail);
+    } catch (error) {
+      setFundDetailError(String(error));
+    }
+  };
 
   // 加载所有列表
   const loadLists = async () => {
@@ -77,6 +101,8 @@ function App({ globalRefreshMs }: AppProps) {
     setFundTrend(null);
     setFundAccumTrend(null);
     setFundDetailError(null);
+    setHolding(null);
+    setHoldingError(null);
   }, [selectedListId]);
 
   useEffect(() => {
@@ -85,6 +111,11 @@ function App({ globalRefreshMs }: AppProps) {
       setFundTrend(null);
       setFundAccumTrend(null);
       setFundDetailError(null);
+      setHolding(null);
+      setHoldingError(null);
+      return;
+    }
+    if (selectedListId === null) {
       return;
     }
 
@@ -94,7 +125,7 @@ function App({ globalRefreshMs }: AppProps) {
         setFundDetailError(null);
       }
       try {
-        const detail = await getFundDetail(selectedFundCode);
+        const detail = await getFundDetail(selectedListId, selectedFundCode);
         setFundDetail(detail);
         if (detail.net_value !== null && detail.net_value !== undefined) {
           setFundTrend((prev) => {
@@ -160,11 +191,64 @@ function App({ globalRefreshMs }: AppProps) {
     return () => clearInterval(timer);
   }, [
     selectedFundCode,
+    selectedListId,
     getFundDetail,
     getFundTrend,
     getFundAccumTrend,
     globalRefreshMs,
   ]);
+
+  useEffect(() => {
+    if (!selectedFundCode || selectedListId === null) {
+      setHolding(null);
+      return;
+    }
+    const loadHolding = async () => {
+      setHoldingLoading(true);
+      setHoldingError(null);
+      try {
+        const result = await getHolding(selectedListId, selectedFundCode);
+        setHolding(result);
+      } catch (error) {
+        setHolding(null);
+        setHoldingError(String(error));
+      } finally {
+        setHoldingLoading(false);
+      }
+    };
+    loadHolding();
+  }, [selectedListId, selectedFundCode, getHolding, holdingVersion]);
+
+  const handleSaveHolding = async (amount: number, shares: number) => {
+    if (!selectedFundCode || selectedListId === null) return;
+    try {
+      const result = await saveHolding(
+        selectedListId,
+        selectedFundCode,
+        amount,
+        shares
+      );
+      setHolding(result);
+      setHoldingVersion((prev) => prev + 1);
+      showToast("持仓已保存", "success");
+      await reloadDetail();
+    } catch (error) {
+      showToast(String(error), "error");
+    }
+  };
+
+  const handleClearHolding = async () => {
+    if (!selectedFundCode || selectedListId === null) return;
+    try {
+      await clearHolding(selectedListId, selectedFundCode);
+      setHolding(null);
+      setHoldingVersion((prev) => prev + 1);
+      showToast("持仓已清空", "success");
+      await reloadDetail();
+    } catch (error) {
+      showToast(String(error), "error");
+    }
+  };
 
   return (
     <div className="app-container">
@@ -201,6 +285,11 @@ function App({ globalRefreshMs }: AppProps) {
           onListsChange={handleListsChange}
           showToast={showToast}
           refreshIntervalMs={globalRefreshMs}
+          holdingVersion={holdingVersion}
+          sortKey={sortKey}
+          sortOrder={sortOrder}
+          onSortKeyChange={setSortKey}
+          onSortOrderChange={setSortOrder}
         />
       </div>
 
@@ -211,6 +300,11 @@ function App({ globalRefreshMs }: AppProps) {
           accumTrend={fundAccumTrend}
           loading={fundDetailLoading}
           error={fundDetailError}
+          holding={holding}
+          holdingLoading={holdingLoading}
+          holdingError={holdingError}
+          onSaveHolding={handleSaveHolding}
+          onClearHolding={handleClearHolding}
         />
       </div>
     </div>

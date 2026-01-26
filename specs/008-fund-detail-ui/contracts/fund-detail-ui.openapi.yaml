@@ -1,0 +1,226 @@
+openapi: 3.0.3
+info:
+  title: Fund Detail UI API / 基金详情 UI 接口
+  version: 1.0.0
+  description: |
+    Contract for list summaries, holding inputs, and detail panel data.
+    用于列表摘要、持仓输入与详情面板数据的接口契约。
+servers:
+  - url: https://local.app
+paths:
+  /lists:
+    get:
+      summary: List all fund lists / 获取所有基金列表
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FundList'
+  /lists/{listId}/funds:
+    get:
+      summary: List funds in a list / 获取列表中的基金
+      description: |
+        Returns fund summaries for the middle column, including backend-provided
+        holding amount and daily change amount when available.
+        返回中间列基金摘要，包含后端提供的持仓金额与当日涨跌额（如可用）。
+      parameters:
+        - in: path
+          name: listId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FundSummary'
+  /lists/{listId}/funds/{code}/detail:
+    get:
+      summary: Get fund detail for list / 获取列表内基金详情
+      parameters:
+        - in: path
+          name: listId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: code
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9]{6}$'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FundDetail'
+  /lists/{listId}/funds/{code}/holding:
+    get:
+      summary: Get holding for list+fund / 获取持仓信息
+      parameters:
+        - in: path
+          name: listId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: code
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9]{6}$'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Holding'
+    put:
+      summary: Save holding for list+fund / 保存持仓信息
+      parameters:
+        - in: path
+          name: listId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: code
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9]{6}$'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HoldingInput'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Holding'
+    delete:
+      summary: Clear holding for list+fund / 清空持仓信息
+      parameters:
+        - in: path
+          name: listId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: code
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9]{6}$'
+      responses:
+        '204':
+          description: No Content
+components:
+  schemas:
+    FundList:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        fund_codes:
+          type: array
+          items:
+            type: string
+            pattern: '^[0-9]{6}$'
+      required: [id, name, fund_codes]
+    FundSummary:
+      type: object
+      properties:
+        code:
+          type: string
+          pattern: '^[0-9]{6}$'
+        name:
+          type: string
+        daily_change:
+          type: number
+        daily_change_percent:
+          type: number
+        daily_change_amount:
+          type: number
+          nullable: true
+        holding_amount:
+          type: number
+          nullable: true
+        as_of:
+          type: string
+          format: date-time
+      required: [code, name, as_of]
+    FundDetail:
+      type: object
+      properties:
+        code:
+          type: string
+          pattern: '^[0-9]{6}$'
+        name:
+          type: string
+        net_value:
+          type: number
+        net_value_date:
+          type: string
+          format: date
+        daily_change:
+          type: number
+        daily_change_percent:
+          type: number
+        daily_change_amount:
+          type: number
+          nullable: true
+        as_of:
+          type: string
+          format: date-time
+        holding_amount:
+          type: number
+          nullable: true
+        holding_shares:
+          type: number
+          nullable: true
+        cost_price:
+          type: number
+          nullable: true
+      required: [code, name, as_of]
+    Holding:
+      type: object
+      properties:
+        list_id:
+          type: string
+        fund_code:
+          type: string
+          pattern: '^[0-9]{6}$'
+        holding_amount:
+          type: number
+        holding_shares:
+          type: number
+        updated_at:
+          type: string
+          format: date-time
+      required: [list_id, fund_code, holding_amount, holding_shares, updated_at]
+    HoldingInput:
+      type: object
+      properties:
+        holding_amount:
+          type: number
+        holding_shares:
+          type: number
+      required: [holding_amount, holding_shares]

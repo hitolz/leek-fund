@@ -46,6 +46,8 @@ pub async fn get_fund_summary(code: &str) -> AppResult<FundSummary> {
         code: info.code,
         name: info.name,
         daily_change_percent: info.change_percent,
+        daily_change_amount: None,
+        holding_amount: None,
         update_time: info.update_time,
     })
 }
@@ -57,7 +59,11 @@ pub async fn get_fund_detail(code: &str) -> AppResult<FundDetail> {
         name: info.name,
         net_value: info.net_value,
         change_percent: info.change_percent,
+        daily_change_amount: None,
         update_time: info.update_time,
+        holding_amount: None,
+        holding_shares: None,
+        cost_price: None,
     })
 }
 

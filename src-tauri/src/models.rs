@@ -33,6 +33,10 @@ pub struct FundSummary {
     pub name: String,
     /// 当日涨跌幅（百分比字符串）
     pub daily_change_percent: Option<String>,
+    /// 当日涨跌额（基于持仓计算）
+    pub daily_change_amount: Option<f64>,
+    /// 持仓金额
+    pub holding_amount: Option<f64>,
     /// 更新时间
     pub update_time: Option<String>,
 }
@@ -48,8 +52,16 @@ pub struct FundDetail {
     pub net_value: Option<f64>,
     /// 当日涨跌幅（百分比字符串）
     pub change_percent: Option<String>,
+    /// 当日涨跌额（基于持仓计算）
+    pub daily_change_amount: Option<f64>,
     /// 更新时间
     pub update_time: Option<String>,
+    /// 持仓金额
+    pub holding_amount: Option<f64>,
+    /// 持仓份额
+    pub holding_shares: Option<f64>,
+    /// 成本价（持仓金额/持仓份额）
+    pub cost_price: Option<f64>,
 }
 
 /// 基金走势点
@@ -83,6 +95,17 @@ pub struct FundList {
     pub updated_at: i64,
     /// 显示位置（用于排序）
     pub position: i64,
+}
+
+/// 分组-基金持仓信息
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GroupFundPosition {
+    pub list_id: i64,
+    pub fund_code: String,
+    pub holding_amount: f64,
+    pub holding_shares: f64,
+    pub created_at: i64,
+    pub updated_at: i64,
 }
 
 impl FundList {

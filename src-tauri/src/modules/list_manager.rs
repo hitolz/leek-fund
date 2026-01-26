@@ -3,6 +3,7 @@ use crate::models::{AppState, FundList};
 use chrono::Utc;
 use sqlx::{Row, SqlitePool};
 use std::sync::Mutex;
+use std::str::FromStr;
 
 async fn get_pool(state: &Mutex<AppState>) -> SqlitePool {
     let pool = state.lock().unwrap().pool.clone();
@@ -369,6 +370,17 @@ pub async fn get_all_lists(state: &Mutex<AppState>) -> AppResult<Vec<FundList>> 
     }
 
     Ok(lists)
+}
+
+pub fn compute_daily_change_amount(
+    change_percent: &Option<String>,
+    holding_amount: Option<f64>,
+) -> Option<f64> {
+    let holding_amount = holding_amount?;
+    let raw = change_percent.as_ref()?;
+    let cleaned = raw.trim().trim_end_matches('%');
+    let percent = f64::from_str(cleaned).ok()?;
+    Some(holding_amount * percent / 100.0)
 }
 
 async fn get_list_fund_codes_internal(pool: &SqlitePool, list_id: i64) -> AppResult<Vec<String>> {
