@@ -42,7 +42,7 @@ This feature enables users to:
 │         Rust Backend (Tauri)            │
 │  fund_api | list_manager | storage      │
 │            ↓           ↓                │
-│      External API   JSON File           │
+│      External API   SQLite (local)      │
 └─────────────────────────────────────────┘
 ```
 
@@ -60,8 +60,8 @@ This feature enables users to:
 - Vite (build tool)
 
 **Data**:
-- Local JSON file storage
-- External fund API: `fundgz.1234567.com.cn`
+- Local SQLite storage (with JSON migration) / 本地 SQLite 存储（含 JSON 迁移）
+- External fund API: `fundgz.1234567.com.cn` / 外部基金 API：`fundgz.1234567.com.cn`
 
 ---
 
@@ -71,11 +71,11 @@ This feature strictly adheres to all 5 constitutional principles:
 
 | Principle | Implementation |
 |-----------|----------------|
-| **1. Tauri Architecture** | ✅ Cross-platform desktop via Tauri |
-| **2. Rust Backend** | ✅ All HTTP/data ops in Rust modules |
-| **3. Frontend Separation** | ✅ UI only, no business logic |
-| **4. Local Storage** | ✅ JSON file, no cloud dependency |
-| **5. Multi-List Uniqueness** | ✅ HashSet duplicate prevention |
+| **1. Tauri Desktop Architecture / Tauri 桌面架构** | ✅ Cross-platform desktop via Tauri |
+| **2. Rust Owns Data & Network / Rust 管理数据与网络** | ✅ All HTTP/data ops in Rust modules |
+| **3. UI-Only Frontend / 仅 UI 前端** | ✅ UI only, no business logic |
+| **4. Local-First Persistence & Recovery / 本地优先持久化与恢复** | ✅ SQLite storage, JSON migration, no cloud dependency |
+| **5. Fund List Semantics & Data Integrity / 基金列表语义与数据完整性** | ✅ Uniqueness within list, deterministic validation |
 
 ---
 
@@ -194,7 +194,7 @@ specs/001-fund-list-management/
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| Storage Backend | JSON File | Simple, transparent, sufficient for scale |
+| Storage Backend | SQLite (with JSON migration) | Reliable local store with migration path |
 | API Parsing | JSONP Extraction | Fund API returns `jsonpgz(...)` wrapper |
 | Duplicate Detection | HashSet | O(1) lookup, in-memory efficiency |
 | Frontend Framework | React + TypeScript | Mature ecosystem, Tauri support |
@@ -411,4 +411,3 @@ See [`tasks.md`](./tasks.md) for detailed task breakdown and begin with Task 0.1
 **Document Version**: 1.0.0  
 **Last Updated**: 2025-10-20  
 **Maintained By**: Feature specification system
-
