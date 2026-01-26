@@ -1,0 +1,130 @@
+openapi: 3.0.3
+info:
+  title: AI Chat API
+  version: 0.1.0
+servers:
+  - url: http://localhost
+paths:
+  /api/sessions:
+    post:
+      summary: Create a new chat session
+      responses:
+        "201":
+          description: Session created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+  /api/sessions/recent:
+    get:
+      summary: Get most recent session
+      responses:
+        "200":
+          description: Most recent session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Session"
+        "404":
+          description: No session found
+  /api/sessions/{session_id}/messages:
+    get:
+      summary: List messages for a session
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Messages for the session
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Message"
+  /api/sessions/{session_id}/messages/stream:
+    post:
+      summary: Send a user message and receive assistant reply via SSE
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserMessageInput"
+      responses:
+        "200":
+          description: SSE stream of assistant response chunks
+          content:
+            text/event-stream:
+              schema:
+                $ref: "#/components/schemas/SseEvent"
+components:
+  schemas:
+    Session:
+      type: object
+      properties:
+        id:
+          type: integer
+        session_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required: [id, session_id, created_at, updated_at]
+    Message:
+      type: object
+      properties:
+        id:
+          type: integer
+        session_id:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum: [user, assistant]
+        content:
+          type: string
+        saved_state:
+          type: string
+          enum: [saved, unsaved]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required: [id, session_id, role, content, created_at, updated_at]
+    UserMessageInput:
+      type: object
+      properties:
+        content:
+          type: string
+      required: [content]
+    SseEvent:
+      type: object
+      description: SSE event payload
+      properties:
+        event:
+          type: string
+          description: event name
+        data:
+          type: string
+          description: chunk content or status

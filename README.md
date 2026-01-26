@@ -4,11 +4,15 @@
 
 ## ✨ 功能特性
 
-- 🔍 **基金搜索**: 输入6位基金代码，实时查询基金信息
-- 📝 **多列表管理**: 创建、重命名、删除多个自定义基金列表
-- ➕ **智能添加**: 添加基金到列表，自动去重（同一列表内）
-- 💾 **数据持久化**: 所有数据自动保存到本地，应用重启后恢复
-- 🎨 **现代UI**: 简洁美观的用户界面，响应式布局
+- 🔍 **基金搜索**: 输入 6 位基金代码实时查询，自动校验格式与错误提示
+- 📝 **多列表管理**: 创建/重命名/删除自定义基金列表，单列表内自动去重
+- 🧭 **三列布局**: 左侧切列表，中间即时展示该列表的基金（代码/名称/当日涨跌），右侧详情含基础信息与走势图，空态提示友好
+- 💰 **持仓金额**: 在基金详情页按“分组+基金”设置或清空持仓，自动计算并展示当日涨跌金额
+- ➕ **智能添加**: 当目标基金已在列表时，下方列表自动过滤只展示该基金，避免重复并可一键恢复全量
+- 💾 **本地持久化**: 数据写入 `SQLite`，启动自动迁移旧 `lists.json`，数据库损坏时自动备份后重建
+- 🤖 **AI 对话 Tab**: SSE 流式回复，自动创建/续写最近会话，消息与会话持久化到 SQLite，失败有重试提示
+- 🔁 **自动刷新**: 基金数据周期性自动刷新（约 1–5 分钟，可按需求调节频率）
+- 🎨 **现代UI**: 响应式布局，包含空态/错误提示与基础快捷操作
 
 ## 🚀 快速开始
 
@@ -55,11 +59,13 @@ npm run tauri:build
 - **tokio**: 异步运行时
 - **uuid**: UUID 生成
 - **chrono**: 时间处理
+- **SQLx + SQLite**: 本地数据库访问与迁移
 
 ### 前端 (React)
 - **React 18**: UI 框架
 - **TypeScript**: 类型安全
 - **Vite**: 构建工具
+- **SSE 流式处理**: AI 对话 Tab 通过 SSE 展示增量回复
 
 ## 🏗️ 项目结构
 
@@ -115,6 +121,16 @@ npm run format
 - **Rust 后端**: 使用 `println!` 或 `dbg!` 宏，输出会显示在终端
 - **前端**: 使用浏览器开发工具（在 Tauri 窗口中按 `Cmd+Option+I` / `Ctrl+Shift+I`）
 
+## 🗄️ 数据存储
+
+- 默认存储文件：应用数据目录下的 `lists.sqlite`（旧版数据位于同目录的 `lists.json`）
+- 启动时如果检测到 `lists.json` 且数据库为空，会自动迁移到 SQLite，并将原文件重命名为 `lists.migrated.json`
+- 如果数据库损坏，应用会自动备份为 `lists.backup.{timestamp}.sqlite` 后重建空库
+- 路径示例：
+  - macOS: `~/Library/Application Support/leek-fund/`
+  - Windows: `%APPDATA%/leek-fund/`
+  - Linux: `~/.local/share/leek-fund/`
+
 ## 📖 API 接口
 
 ### 基金数据来源
@@ -130,15 +146,22 @@ npm run format
 - `create_list(name)`: 创建列表
 - `add_fund_to_list(list_id, fund_code)`: 添加基金
 - `remove_fund_from_list(list_id, fund_code)`: 移除基金
-- 更多详见 [API 契约文档](./specs/001-fund-list-management/contracts/tauri-commands.md)
+- 更多详见 [API 契约文档](specs/000-fund-list-management/contracts/tauri-commands.md)
+- 其它契约：
+  - 三列布局/详情接口: `specs/002-fund-detail-layout/contracts/openapi.yaml`
+  - SQLite 存储接口: `specs/003-sqlite-storage/contracts/openapi.yaml`
+  - AI 对话 SSE 接口: `specs/006-ai-chat-tab/contracts/openapi.yaml`
+  - 添加过滤接口: `specs/007-fund-add-search/contracts/fund-list.openapi.yaml`
 
 ## 📝 功能使用
 
 1. **搜索基金**: 在搜索框输入6位基金代码（如 `001632`）
 2. **创建列表**: 在左侧面板输入列表名称并点击"创建"
 3. **添加基金**: 搜索到基金后，选择目标列表并点击"添加到列表"
-4. **查看列表**: 点击左侧列表查看其中的基金详情
-5. **管理列表**: 使用重命名（✏️）和删除（🗑️）按钮管理列表
+4. **三列浏览**: 左侧选列表 → 中间查看基金（含当日涨跌）→ 右侧查看详情与走势图
+5. **持仓输入**: 在右侧详情页为当前分组+基金设置持仓金额，查看当日涨跌金额，可清空
+6. **智能添加**: 若基金已在中间列表，点击添加会让下方列表只显示该基金，方便确认；可一键恢复全量
+7. **AI 对话**: 切换到 AI Tab，输入文本发送，实时流式查看回复，会话自动续写最近一条
 
 ## 🛠️ 故障排查
 
@@ -154,33 +177,24 @@ npm config set registry https://registry.npmmirror.com
 rustup update
 ```
 
-### 问题: 数据文件损坏
+### 问题: 数据库文件损坏或无法读取
 **位置**: 
-- macOS: `~/Library/Application Support/leek-fund/lists.json`
-- Windows: `%APPDATA%/leek-fund/lists.json`
-- Linux: `~/.local/share/leek-fund/lists.json`
+- macOS: `~/Library/Application Support/leek-fund/lists.sqlite`
+- Windows: `%APPDATA%/leek-fund/lists.sqlite`
+- Linux: `~/.local/share/leek-fund/lists.sqlite`
 
-**解决**: 删除该文件，应用会创建新的空数据
+**解决**: 备份或删除损坏文件后重启；应用会自动创建新库并在存在 `lists.json` 时尝试迁移。若应用已自动生成 `lists.backup.{timestamp}.sqlite`，可视情况保留。
 
 ## 📄 开发文档
 
-完整的设计和实现文档位于 `specs/001-fund-list-management/` 目录：
-- [功能规格](./specs/001-fund-list-management/spec.md)
-- [实现计划](./specs/001-fund-list-management/plan.md)
-- [数据模型](./specs/001-fund-list-management/data-model.md)
-- [任务列表](./specs/001-fund-list-management/tasks.md)
-
-## 📊 实现进度
-
-- [x] Phase 1: 项目初始化 (5/5 任务)
-- [x] Phase 2: 数据模型与存储 (6/6 任务)
-- [x] Phase 3: US1 基金搜索 (6/6 任务)
-- [x] Phase 4: US2 添加到列表 (7/7 任务)
-- [x] Phase 5: US3 列表管理 (8/8 任务)
-- [x] Phase 6: US4 数据持久化 (3/5 任务)
-- [x] Phase 7: UI 优化 (4/6 任务)
-
-**总进度**: 39/43 任务完成 (91%)
+- 000-fund-list-management：基础基金搜索/列表/持久化规格（spec/plan/data-model/tasks）
+- 001-fund-tracker-client：客户端澄清与自动刷新等补充说明
+- 002-fund-detail-layout：三列布局与基金详情/走势图
+- 003-sqlite-storage：SQLite 持久化与 JSON 迁移、故障恢复
+- 004-holding-amount：分组+基金持仓金额与当日涨跌金额
+- 005-fix-amount-calculation：涨跌额正负号计算修复与展示格式
+- 006-ai-chat-tab：AI 对话 Tab（SSE 流式回复、会话持久化、多 agent 扩展）
+- 007-fund-add-search：添加按钮命中已存在基金时的列表过滤行为
 
 ## 🤝 贡献
 

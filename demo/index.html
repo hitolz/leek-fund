@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Leek Fund Demo</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+    <div class="bg-grid"></div>
+
+    <div class="page">
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-mark"></span>
+          <div>
+            <div class="brand-title">Leek Fund</div>
+            <div class="brand-subtitle">基金监控台</div>
+          </div>
+        </div>
+        <div class="search">
+          <input type="text" placeholder="搜索基金代码 / 名称" />
+          <span class="search-tag">实时</span>
+        </div>
+        <div class="actions">
+          <button class="button ghost">刷新</button>
+          <button class="button primary">新建列表</button>
+        </div>
+      </header>
+
+      <div class="layout">
+        <aside class="panel left-panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">基金列表</div>
+          <div class="panel-subtitle">列表数量 · FundList[]</div>
+            </div>
+            <button class="button ghost small">管理</button>
+          </div>
+          <div class="list-error">
+            数据加载失败，已切换到本地缓存。请检查备份文件。
+          </div>
+          <div class="list-group">
+            <button class="list-item active">
+              <div class="list-name">核心持仓</div>
+              <div class="list-meta">fund_codes.length: 12</div>
+            </button>
+            <button class="list-item">
+              <div class="list-name">稳健收益</div>
+              <div class="list-meta">fund_codes.length: 6</div>
+            </button>
+            <button class="list-item">
+              <div class="list-name">行业轮动</div>
+              <div class="list-meta">fund_codes.length: 9</div>
+            </button>
+            <button class="list-item">
+              <div class="list-name">长期观察</div>
+              <div class="list-meta">fund_codes.length: 5</div>
+            </button>
+            <button class="list-item">
+              <div class="list-name">主题策略</div>
+              <div class="list-meta">fund_codes.length: 7</div>
+            </button>
+          </div>
+          <div class="collapse">
+            <span>‹</span>
+            <div>收起列表</div>
+          </div>
+        </aside>
+
+        <main class="panel middle-panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">核心持仓</div>
+              <div class="panel-subtitle">
+                refreshIntervalMs · FundSummary[]
+              </div>
+            </div>
+            <div class="panel-actions">
+              <button class="button ghost small">添加基金</button>
+              <button class="button primary small">导入</button>
+            </div>
+          </div>
+          <div class="table">
+            <div class="table-head">
+              <span>name</span>
+              <span>net_value</span>
+              <span>daily_change_percent</span>
+              <span>update_time</span>
+            </div>
+            <div class="table-row active">
+              <div>
+                <div class="fund-name">中证新能源精选</div>
+                <div class="fund-code">code: 160222</div>
+              </div>
+              <div class="value">net_value: 3.284</div>
+              <div class="delta up">daily_change_percent: +1.32%</div>
+              <div class="time">update_time: 14:35</div>
+            </div>
+            <div class="table-row">
+              <div>
+                <div class="fund-name">天弘指数增强</div>
+                <div class="fund-code">code: 001012</div>
+              </div>
+              <div class="value">net_value: 1.926</div>
+              <div class="delta down">daily_change_percent: -0.48%</div>
+              <div class="time">update_time: 14:35</div>
+            </div>
+            <div class="table-row">
+              <div>
+                <div class="fund-name">广发医疗健康</div>
+                <div class="fund-code">code: 003095</div>
+              </div>
+              <div class="value">net_value: 2.114</div>
+              <div class="delta up">daily_change_percent: +0.62%</div>
+              <div class="time">update_time: 14:34</div>
+            </div>
+            <div class="table-row">
+              <div>
+                <div class="fund-name">华夏红利优选</div>
+                <div class="fund-code">code: 000021</div>
+              </div>
+              <div class="value">net_value: 1.582</div>
+              <div class="delta flat">daily_change_percent: +0.05%</div>
+              <div class="time">update_time: 14:34</div>
+            </div>
+            <div class="table-row">
+              <div>
+                <div class="fund-name">易方达科技创新</div>
+                <div class="fund-code">code: 008911</div>
+              </div>
+              <div class="value">net_value: 2.468</div>
+              <div class="delta down">daily_change_percent: -0.91%</div>
+              <div class="time">update_time: 14:33</div>
+            </div>
+          </div>
+          <div class="table-footer">
+            <div class="pill">累计净值趋势已同步</div>
+            <div class="hint">选择基金后查看右侧详情</div>
+          </div>
+        </main>
+
+        <aside class="panel right-panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">基金详情</div>
+            <div class="panel-subtitle">code · name</div>
+            </div>
+            <button class="button ghost small">置顶</button>
+          </div>
+          <div class="detail-cards">
+            <div class="detail-card">
+              <div class="detail-label">net_value</div>
+              <div class="detail-value">3.284</div>
+              <div class="detail-change up">change_percent: +1.32%</div>
+            </div>
+            <div class="detail-card">
+              <div class="detail-label">update_time</div>
+              <div class="detail-value">2026-01-21 14:35</div>
+              <div class="detail-change">FundDetail</div>
+            </div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-header">
+              <div>
+                <div class="panel-title">走势曲线</div>
+                <div class="panel-subtitle">FundTrend.window</div>
+              </div>
+              <div class="segmented">
+                <button class="segmented-btn active">实时净值</button>
+                <button class="segmented-btn">趋势</button>
+                <button class="segmented-btn">累计</button>
+              </div>
+            </div>
+            <div class="chart-placeholder">
+              <div class="chart-line"></div>
+            </div>
+          </div>
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="info-label">基金规模</div>
+              <div class="info-value">91.6 亿</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">基金经理</div>
+              <div class="info-value">林霖</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">成立时间</div>
+              <div class="info-value">2019/07/16</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">风险等级</div>
+              <div class="info-value">中高</div>
+            </div>
+          </div>
+          <div class="note-card">
+            <div class="panel-title">操作建议</div>
+            <div class="note-text">
+              今日出现放量反弹，建议观察 2 个交易日后再决定是否加仓。
+            </div>
+            <button class="button primary small">添加提醒</button>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </body>
+</html>

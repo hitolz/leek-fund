@@ -1,0 +1,120 @@
+openapi: 3.0.3
+info:
+  title: Fund List Interaction Contract
+  version: 1.0.0
+  description: |
+    Defines the UI-to-service interaction for adding funds and filtering the lower list.
+    定义添加基金与下方列表过滤的界面到服务交互。
+paths:
+  /funds:
+    get:
+      summary: List funds with optional lower-list filtering
+      description: |
+        Returns fund items for the requested list view, optionally filtered to a single fund.
+        返回指定列表视图的基金条目，可选按单一基金过滤。
+      parameters:
+        - name: listType
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [middle, lower]
+            default: lower
+          description: |
+            Which list view to return.
+            指定返回的列表视图。
+        - name: filterFundId
+          in: query
+          required: false
+          schema:
+            type: string
+          description: |
+            When provided, lower list is filtered to this fund id.
+            提供该参数时，下方列表过滤为指定基金。
+      responses:
+        "200":
+          description: |
+            List response with optional filter information.
+            包含可选过滤信息的列表响应。
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  funds:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Fund"
+                  filterApplied:
+                    type: boolean
+                  filterFundId:
+                    type: string
+                    nullable: true
+  /funds/add:
+    post:
+      summary: Add a fund or trigger existing-fund filter
+      description: |
+        Adds a fund to the middle list if missing; if already present, returns a filter hint.
+        若基金未在中间列表中则添加；若已存在则返回过滤提示。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fundId]
+              properties:
+                fundId:
+                  type: string
+                  description: |
+                    Identifier for the fund to add.
+                    待添加的基金标识。
+      responses:
+        "200":
+          description: |
+            Add result with duplicate detection and filter guidance.
+            添加结果，包含重复判断与过滤指引。
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  added:
+                    type: boolean
+                  alreadyExists:
+                    type: boolean
+                  filteredFundId:
+                    type: string
+                    nullable: true
+                  message:
+                    type: string
+  /funds/filter/clear:
+    post:
+      summary: Clear the lower-list filter
+      description: |
+        Clears any existing filter so the lower list shows all funds again.
+        清除过滤，使下方列表恢复显示全部基金。
+      responses:
+        "204":
+          description: |
+            Filter cleared.
+            过滤已清除。
+components:
+  schemas:
+    Fund:
+      type: object
+      description: |
+        A fund item that can appear in the middle or lower list.
+        可出现在中间或下方列表中的基金条目。
+      properties:
+        id:
+          type: string
+          description: |
+            Unique fund identifier or code.
+            基金唯一标识或代码。
+        name:
+          type: string
+          description: |
+            Display name of the fund.
+            基金显示名称。
+      required: [id, name]
