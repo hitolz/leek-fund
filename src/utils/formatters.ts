@@ -35,6 +35,16 @@ export const formatCurrency = (value: number | null | undefined) => {
   return value.toFixed(2);
 };
 
+export const formatFixedNumber = (
+  value: number | null | undefined,
+  decimals: number
+) => {
+  if (value === null || value === undefined || !Number.isFinite(value)) {
+    return "--";
+  }
+  return value.toFixed(decimals);
+};
+
 export const formatSignedCurrency = (value: number | null | undefined) => {
   if (value === null || value === undefined || !Number.isFinite(value)) {
     return "--";

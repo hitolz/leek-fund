@@ -1,5 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { formatCurrency } from "../utils/formatters";
+import {
+  formatCurrency,
+  formatFixedNumber,
+  formatSignedCurrency,
+  getChangeClassFromNumber,
+} from "../utils/formatters";
 
 interface HoldingFormProps {
   holdingAmount: number | null | undefined;
@@ -98,7 +103,7 @@ export const HoldingForm: React.FC<HoldingFormProps> = ({
         <label>
           成本价
           <div className="holding-readonly">
-            {hasZeroShares ? "--" : formatCurrency(costPrice)}
+            {hasZeroShares ? "--" : formatFixedNumber(costPrice, 4)}
           </div>
           {hasZeroShares && (
             <span className="holding-hint">份额为 0，无法计算</span>
@@ -129,7 +134,13 @@ export const HoldingForm: React.FC<HoldingFormProps> = ({
         </div>
         <div>
           <span>当日涨跌金额</span>
-          <strong>{formatCurrency(dailyChangeAmount ?? null)}</strong>
+          <strong
+            className={`fund-change ${getChangeClassFromNumber(
+              dailyChangeAmount ?? null
+            )}`}
+          >
+            {formatSignedCurrency(dailyChangeAmount ?? null)}
+          </strong>
         </div>
       </div>
     </div>

@@ -44,8 +44,8 @@ pub async fn set_group_fund_position(
     if !FundInfo::validate_code(fund_code) {
         return Err(AppError::ValidationError("基金代码格式错误".to_string()));
     }
-    let holding_amount = round_two_decimals(holding_amount);
-    let holding_shares = round_two_decimals(holding_shares);
+    let holding_amount = round_four_decimals(holding_amount);
+    let holding_shares = round_four_decimals(holding_shares);
 
     if !holding_amount.is_finite() || holding_amount < 0.0 {
         return Err(AppError::ValidationError("持仓金额无效".to_string()));
@@ -82,8 +82,8 @@ pub async fn set_group_fund_position(
     })
 }
 
-fn round_two_decimals(value: f64) -> f64 {
-    (value * 100.0).round() / 100.0
+fn round_four_decimals(value: f64) -> f64 {
+    (value * 10000.0).round() / 10000.0
 }
 
 pub async fn clear_group_fund_position(

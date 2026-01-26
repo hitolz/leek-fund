@@ -166,9 +166,9 @@ export const FundTrendChart: React.FC<FundTrendChartProps> = ({
     <div className="fund-trend">
       <div className="fund-trend-header">
         <span>{title}</span>
+        <span className="fund-trend-window">{trend.window}</span>
       </div>
       <div className="fund-trend-chart-area" ref={containerRef}>
-        <div className="fund-trend-window-abs">{trend.window}</div>
         {hoverPoint && hoverPos && (
           <div
             className="fund-trend-tooltip"
