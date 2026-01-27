@@ -3,6 +3,10 @@ import { FundSummary } from "../types";
 import { useTauriCommands } from "../hooks/useTauriCommands";
 import { ListDetail } from "./ListDetail";
 import { isFundInList } from "../utils/fundFilter";
+import {
+  formatSignedCurrency,
+  getChangeClassFromNumber,
+} from "../utils/formatters";
 
 interface ListDetailViewProps {
   listId: number | null;
@@ -38,8 +42,12 @@ export const ListDetailView: React.FC<ListDetailViewProps> = ({
   const [funds, setFunds] = useState<FundSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [newFundCode, setNewFundCode] = useState("");
-  const { getListFundSummaries, addFundToList, syncFundPingzhong } =
-    useTauriCommands();
+  const {
+    getListFundSummaries,
+    addFundToList,
+    removeFundFromList,
+    syncFundPingzhong,
+  } = useTauriCommands();
 
   useEffect(() => {
     if (listId !== null) {
@@ -106,6 +114,21 @@ export const ListDetailView: React.FC<ListDetailViewProps> = ({
     }
   };
 
+  const handleRemoveFund = async (code: string) => {
+    if (listId === null) return;
+    try {
+      await removeFundFromList(listId, code);
+      if (selectedFundCode === code) {
+        onSelectFund("");
+      }
+      showToast?.("已从列表移除", "success");
+      loadFunds(false);
+      onListsChange();
+    } catch (error) {
+      showToast?.(String(error), "error");
+    }
+  };
+
   const sortedFunds = useMemo(() => {
     if (sortOrder === "none") {
       return funds;
@@ -127,6 +150,20 @@ export const ListDetailView: React.FC<ListDetailViewProps> = ({
     });
     return withIndex.map((item) => item.fund);
   }, [funds, sortKey, sortOrder]);
+
+  const dailyChangeTotal = useMemo(() => {
+    let total = 0;
+    let hasValue = false;
+    funds.forEach((fund) => {
+      const value = fund.daily_change_amount;
+      if (value === null || value === undefined || !Number.isFinite(value)) {
+        return;
+      }
+      total += value;
+      hasValue = true;
+    });
+    return hasValue ? total : null;
+  }, [funds]);
 
   if (listId === null) {
     return (
@@ -233,16 +270,29 @@ export const ListDetailView: React.FC<ListDetailViewProps> = ({
         </select>
       </div>
 
-      <div className="funds-list">
-        {sortedFunds.map((fund) => (
+      <div className="funds-list-wrap">
+        <div className="funds-list">
+          {sortedFunds.map((fund) => (
           <ListDetail
             key={fund.code}
             fund={fund}
             selected={selectedFundCode === fund.code}
             onSelect={onSelectFund}
+            onRemove={handleRemoveFund}
             sortKey={sortKey}
           />
         ))}
+      </div>
+      </div>
+      <div className="funds-summary">
+        <span>当日涨跌金额汇总</span>
+        <strong
+          className={`fund-change ${getChangeClassFromNumber(
+            dailyChangeTotal ?? null
+          )}`}
+        >
+          {formatSignedCurrency(dailyChangeTotal ?? null)}
+        </strong>
       </div>
     </div>
   );
