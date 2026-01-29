@@ -251,19 +251,38 @@ function App({ globalRefreshMs }: AppProps) {
   };
 
   return (
-    <div className="app-container">
-      <div className={`left-section ${leftCollapsed ? "collapsed" : ""}`}>
-        <button
-          type="button"
-          className="left-toggle-btn"
-          onClick={() => setLeftCollapsed((prev) => !prev)}
-          aria-label={leftCollapsed ? "展开列表" : "隐藏列表"}
-          title={leftCollapsed ? "展开列表" : "隐藏列表"}
-        >
-          {leftCollapsed ? "›" : "‹"}
-        </button>
-        {!leftCollapsed && (
-          <>
+    <div className="app-shell">
+      <header className="topbar">
+        <div className="topbar-left">
+          <span className="meta-pill">当前列表：{selectedList?.name || "未选择"}</span>
+          <span className="meta-pill ghost">
+            当前基金：{fundDetail?.name || selectedFundCode || "未选择"}
+          </span>
+        </div>
+        <div className="topbar-meta">
+          <span className="meta-pill">刷新间隔：{globalRefreshMs / 1000}s</span>
+          <span className="meta-pill ghost">本地数据 · 自动更新</span>
+        </div>
+      </header>
+
+      <div className={`layout ${leftCollapsed ? "panel-hidden" : ""}`}>
+        <aside className={`panel left-panel ${leftCollapsed ? "hidden" : ""}`}>
+          <div className="panel-header">
+            <div>
+              <div className="panel-title">基金列表</div>
+              <div className="panel-subtitle">
+                {lists.length} 个列表 · 选择后显示基金
+              </div>
+            </div>
+            <button
+              type="button"
+              className="button ghost small"
+              onClick={() => setLeftCollapsed(true)}
+            >
+              隐藏
+            </button>
+          </div>
+          <div className="panel-body">
             {listsError && <div className="list-error">{listsError}</div>}
             <ListsPanel
               lists={lists}
@@ -272,40 +291,64 @@ function App({ globalRefreshMs }: AppProps) {
               onListsChange={handleListsChange}
               showToast={showToast}
             />
-          </>
+          </div>
+          <div className="panel-footer">
+            <button
+              type="button"
+              className="button ghost small collapse-btn"
+              onClick={() => setLeftCollapsed(true)}
+            >
+              收起列表
+            </button>
+          </div>
+        </aside>
+
+        {leftCollapsed && (
+          <button
+            type="button"
+            className="panel-toggle-floating"
+            onClick={() => setLeftCollapsed(false)}
+            aria-label="展开列表"
+          >
+            展开列表
+          </button>
         )}
-      </div>
 
-      <div className="middle-section">
-        <ListDetailView
-          listId={selectedListId}
-          listName={selectedList?.name || ""}
-          selectedFundCode={selectedFundCode}
-          onSelectFund={setSelectedFundCode}
-          onListsChange={handleListsChange}
-          showToast={showToast}
-          refreshIntervalMs={globalRefreshMs}
-          holdingVersion={holdingVersion}
-          sortKey={sortKey}
-          sortOrder={sortOrder}
-          onSortKeyChange={setSortKey}
-          onSortOrderChange={setSortOrder}
-        />
-      </div>
+        <main className="panel middle-panel">
+          <div className="panel-body panel-body-fixed">
+            <ListDetailView
+              listId={selectedListId}
+              listName={selectedList?.name || ""}
+              selectedFundCode={selectedFundCode}
+              onSelectFund={setSelectedFundCode}
+              onListsChange={handleListsChange}
+              showToast={showToast}
+              refreshIntervalMs={globalRefreshMs}
+              holdingVersion={holdingVersion}
+              sortKey={sortKey}
+              sortOrder={sortOrder}
+              onSortKeyChange={setSortKey}
+              onSortOrderChange={setSortOrder}
+            />
+          </div>
+        </main>
 
-      <div className="right-section">
-        <FundDetailPanel
-          detail={fundDetail}
-          trend={fundTrend}
-          accumTrend={fundAccumTrend}
-          loading={fundDetailLoading}
-          error={fundDetailError}
-          holding={holding}
-          holdingLoading={holdingLoading}
-          holdingError={holdingError}
-          onSaveHolding={handleSaveHolding}
-          onClearHolding={handleClearHolding}
-        />
+        <aside className="panel right-panel">
+          <div className="panel-body">
+            <FundDetailPanel
+              detail={fundDetail}
+              trend={fundTrend}
+              accumTrend={fundAccumTrend}
+              loading={fundDetailLoading}
+              error={fundDetailError}
+              holding={holding}
+              holdingLoading={holdingLoading}
+              holdingError={holdingError}
+              onSaveHolding={handleSaveHolding}
+              onClearHolding={handleClearHolding}
+            />
+          </div>
+        </aside>
       </div>
     </div>
   );

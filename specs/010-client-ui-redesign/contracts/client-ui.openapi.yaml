@@ -1,0 +1,218 @@
+openapi: 3.0.3
+info:
+  title: Client UI Redesign Contract
+  version: 0.1.0
+  description: Client-side interactions required by the redesigned UI. Data ownership and validation remain in Rust.
+servers:
+  - url: https://local.tauri
+paths:
+  /lists:
+    get:
+      summary: List available fund lists
+      operationId: listFundLists
+      responses:
+        '200':
+          description: Available lists and active list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [activeListId, lists]
+                properties:
+                  activeListId:
+                    type: string
+                  lists:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FundList'
+  /lists/{listId}/funds:
+    get:
+      summary: List funds for an active list
+      operationId: listFundsForList
+      parameters:
+        - $ref: '#/components/parameters/ListId'
+      responses:
+        '200':
+          description: Funds scoped to list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [listId, defaultOrder, funds]
+                properties:
+                  listId:
+                    type: string
+                  defaultOrder:
+                    type: array
+                    items:
+                      type: string
+                  funds:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Fund'
+    post:
+      summary: Add fund to list
+      operationId: addFundToList
+      parameters:
+        - $ref: '#/components/parameters/ListId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, name]
+              properties:
+                code:
+                  type: string
+                name:
+                  type: string
+      responses:
+        '201':
+          description: Fund added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fund'
+  /lists/{listId}/funds/{fundId}:
+    delete:
+      summary: Remove fund from list
+      operationId: removeFundFromList
+      parameters:
+        - $ref: '#/components/parameters/ListId'
+        - $ref: '#/components/parameters/FundId'
+      responses:
+        '204':
+          description: Fund removed
+  /funds/{fundId}:
+    get:
+      summary: Fetch fund detail
+      operationId: getFundDetail
+      parameters:
+        - $ref: '#/components/parameters/FundId'
+      responses:
+        '200':
+          description: Fund detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FundDetail'
+  /funds/{fundId}/holding:
+    put:
+      summary: Update holding inputs
+      operationId: updateHolding
+      parameters:
+        - $ref: '#/components/parameters/FundId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [holdingAmount, holdingShares]
+              properties:
+                holdingAmount:
+                  type: number
+                  minimum: 0
+                holdingShares:
+                  type: number
+                  minimum: 0
+      responses:
+        '200':
+          description: Holding with derived metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Holding'
+  /lists/{listId}/sort:
+    put:
+      summary: Update sorting preference
+      operationId: updateSortPreference
+      parameters:
+        - $ref: '#/components/parameters/ListId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SortPreference'
+      responses:
+        '200':
+          description: Updated sorting preference
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SortPreference'
+components:
+  parameters:
+    ListId:
+      name: listId
+      in: path
+      required: true
+      schema:
+        type: string
+    FundId:
+      name: fundId
+      in: path
+      required: true
+      schema:
+        type: string
+  schemas:
+    FundList:
+      type: object
+      required: [id, name, fundOrder]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        fundOrder:
+          type: array
+          items:
+            type: string
+    Fund:
+      type: object
+      required: [id, code, name, dailyChangePercent]
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        dailyChangePercent:
+          type: number
+    FundDetail:
+      allOf:
+        - $ref: '#/components/schemas/Fund'
+        - type: object
+          required: [trendPoints]
+          properties:
+            trendPoints:
+              type: array
+              items:
+                type: number
+    Holding:
+      type: object
+      required: [fundId, holdingAmount, holdingShares]
+      properties:
+        fundId:
+          type: string
+        holdingAmount:
+          type: number
+        holdingShares:
+          type: number
+        costPerShare:
+          type: number
+        dailyChangeAmount:
+          type: number
+    SortPreference:
+      type: object
+      required: [field, direction]
+      properties:
+        field:
+          type: string
+          enum: [dailyChangePercent, dailyChangeAmount, holdingAmount]
+        direction:
+          type: string
+          enum: [descending, ascending, none]

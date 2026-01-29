@@ -4,141 +4,706 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Leek Fund Demo</title>
-    <link rel="stylesheet" href="./styles.css" />
+    <style>
+      :root {
+        --bg: #0b1020;
+        --panel: #111a33;
+        --panel-2: #0f1830;
+        --border: #1f2a4d;
+        --text: #e7ecff;
+        --muted: #9aa6d1;
+        --accent: #6aa7ff;
+        --accent-2: #7bffb1;
+        --danger: #ff6b6b;
+        --warn: #ffd166;
+        --up: #ff6f91;
+        --down: #4dd0e1;
+        --flat: #c9d1ff;
+        --shadow: 0 10px 30px rgba(8, 12, 28, 0.45);
+        --radius: 14px;
+        --radius-sm: 10px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Inter, "PingFang SC", "Microsoft YaHei", sans-serif;
+        background: radial-gradient(1200px 600px at -10% -20%, #1a2b59 0%, transparent 60%),
+          radial-gradient(900px 500px at 120% 10%, #1c3d66 0%, transparent 55%),
+          var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+      }
+
+      .page {
+        padding: 20px 22px 28px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 14px;
+        background: linear-gradient(135deg, rgba(34, 61, 120, 0.55), rgba(19, 33, 72, 0.65));
+        border: 1px solid rgba(120, 156, 255, 0.2);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(10px);
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .brand-mark {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        background: conic-gradient(from 210deg, #5da8ff, #7bffb1, #5da8ff);
+        box-shadow: inset 0 0 12px rgba(255, 255, 255, 0.15);
+      }
+
+      .brand-title {
+        font-weight: 700;
+        letter-spacing: 0.3px;
+      }
+
+      .brand-subtitle {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .topbar-hint {
+        font-size: 12px;
+        color: var(--muted);
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px dashed rgba(154, 166, 209, 0.35);
+        background: rgba(16, 26, 58, 0.6);
+        white-space: nowrap;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: 280px minmax(420px, 1.2fr) minmax(440px, 1.35fr);
+        gap: 14px;
+        align-items: stretch;
+        min-height: 720px;
+        transition: grid-template-columns 180ms ease;
+      }
+
+      .layout.panel-hidden {
+        grid-template-columns: 0 minmax(520px, 1.35fr) minmax(520px, 1.45fr);
+      }
+
+      .panel {
+        background: linear-gradient(180deg, rgba(20, 34, 72, 0.94), rgba(13, 23, 50, 0.98));
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        overflow: hidden;
+      }
+
+      .panel.hidden {
+        opacity: 0;
+        pointer-events: none;
+        width: 0;
+        min-width: 0;
+        border: none;
+        padding: 0;
+      }
+
+      .panel-header {
+        padding: 14px 16px 10px;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+        border-bottom: 1px solid rgba(73, 96, 163, 0.3);
+        background: rgba(13, 23, 54, 0.7);
+      }
+
+      .panel-title {
+        font-weight: 700;
+        font-size: 15px;
+      }
+
+      .panel-subtitle {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+
+      .button {
+        border: 1px solid rgba(120, 156, 255, 0.3);
+        background: rgba(28, 47, 94, 0.65);
+        color: var(--text);
+        padding: 7px 12px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 13px;
+        transition: all 120ms ease;
+      }
+
+      .button:hover {
+        border-color: rgba(123, 169, 255, 0.7);
+        transform: translateY(-1px);
+      }
+
+      .button.primary {
+        background: linear-gradient(135deg, rgba(106, 167, 255, 0.25), rgba(90, 229, 177, 0.22));
+        border-color: rgba(123, 255, 177, 0.45);
+      }
+
+      .button.ghost {
+        background: rgba(18, 29, 63, 0.7);
+      }
+
+      .button.small {
+        padding: 6px 10px;
+        font-size: 12px;
+        border-radius: 9px;
+      }
+
+      .button:disabled,
+      .sort-btn:disabled,
+      .input:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .button:disabled:hover,
+      .sort-btn:disabled:hover {
+        border-color: rgba(120, 156, 255, 0.3);
+      }
+
+      .left-panel-body {
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        overflow: auto;
+      }
+
+      .list-item {
+        width: 100%;
+        text-align: left;
+        border: 1px solid transparent;
+        background: rgba(18, 29, 63, 0.72);
+        color: var(--text);
+        border-radius: 12px;
+        padding: 10px 12px;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        transition: all 120ms ease;
+      }
+
+      .list-item:hover {
+        border-color: rgba(122, 160, 255, 0.55);
+      }
+
+      .list-item.active {
+        border-color: rgba(123, 255, 177, 0.7);
+        background: linear-gradient(135deg, rgba(64, 112, 214, 0.32), rgba(71, 209, 160, 0.28));
+      }
+
+      .list-name {
+        font-weight: 600;
+      }
+
+      .list-meta {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .collapse-row {
+        padding: 8px 10px 12px;
+        border-top: 1px solid rgba(73, 96, 163, 0.3);
+        background: rgba(13, 23, 54, 0.7);
+      }
+
+      .collapse-btn {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      .middle-panel-body {
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        overflow: hidden;
+      }
+
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        padding: 8px;
+        border-radius: 12px;
+        background: rgba(17, 28, 64, 0.8);
+        border: 1px solid rgba(73, 96, 163, 0.3);
+      }
+
+      .toolbar-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .toolbar-label {
+        font-size: 12px;
+        color: var(--muted);
+        margin-right: 2px;
+      }
+
+      .sort-btn {
+        border: 1px solid rgba(122, 160, 255, 0.35);
+        background: rgba(19, 33, 72, 0.75);
+        color: var(--text);
+        padding: 6px 9px;
+        border-radius: 9px;
+        font-size: 12px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 120ms ease;
+      }
+
+      .sort-btn.active {
+        border-color: rgba(123, 255, 177, 0.7);
+        background: rgba(52, 121, 204, 0.35);
+      }
+
+      .sort-icon {
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      .sort-btn.active .sort-icon {
+        color: var(--accent-2);
+      }
+
+      .add-form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+      }
+
+      .input {
+        background: rgba(14, 24, 56, 0.9);
+        border: 1px solid rgba(122, 160, 255, 0.35);
+        color: var(--text);
+        border-radius: 10px;
+        padding: 7px 10px;
+        font-size: 13px;
+        outline: none;
+        min-width: 120px;
+      }
+
+      .input:focus {
+        border-color: rgba(123, 255, 177, 0.8);
+        box-shadow: 0 0 0 3px rgba(123, 255, 177, 0.12);
+      }
+
+      .hint-text {
+        font-size: 12px;
+        color: var(--muted);
+        padding: 0 4px;
+      }
+
+      .hint-text.error {
+        color: var(--danger);
+      }
+
+      .fund-list {
+        border: 1px solid rgba(73, 96, 163, 0.35);
+        border-radius: 14px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        background: rgba(12, 22, 52, 0.75);
+      }
+
+      .fund-head,
+      .fund-row {
+        display: grid;
+        grid-template-columns: minmax(180px, 1.2fr) 110px 120px 130px 108px;
+        gap: 8px;
+        align-items: center;
+        padding: 10px 12px;
+      }
+
+      .fund-head {
+        font-size: 12px;
+        color: var(--muted);
+        background: rgba(17, 29, 66, 0.95);
+        border-bottom: 1px solid rgba(73, 96, 163, 0.35);
+        position: sticky;
+        top: 0;
+        z-index: 1;
+      }
+
+      .fund-body {
+        overflow: auto;
+        min-height: 0;
+      }
+
+      .fund-row {
+        border-bottom: 1px solid rgba(73, 96, 163, 0.2);
+        cursor: pointer;
+        transition: background 100ms ease, border-color 100ms ease;
+      }
+
+      .fund-row:hover {
+        background: rgba(33, 58, 120, 0.25);
+      }
+
+      .fund-row.active {
+        background: linear-gradient(135deg, rgba(64, 112, 214, 0.35), rgba(71, 209, 160, 0.3));
+        border-color: rgba(123, 255, 177, 0.55);
+      }
+
+      .fund-name {
+        font-weight: 600;
+        margin-bottom: 2px;
+      }
+
+      .fund-code {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .delta.up {
+        color: var(--up);
+      }
+
+      .delta.down {
+        color: var(--down);
+      }
+
+      .delta.flat {
+        color: var(--flat);
+      }
+
+      .row-actions {
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .row-actions .button {
+        padding: 5px 8px;
+        font-size: 12px;
+        border-radius: 8px;
+      }
+
+      .empty-state {
+        padding: 22px 16px;
+        text-align: center;
+        color: var(--muted);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .detail-body {
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        overflow: auto;
+      }
+
+      .detail-hero {
+        padding: 14px;
+        border-radius: 14px;
+        border: 1px solid rgba(122, 160, 255, 0.35);
+        background: linear-gradient(135deg, rgba(50, 93, 192, 0.45), rgba(26, 46, 110, 0.65));
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .hero-title {
+        font-size: 16px;
+        font-weight: 700;
+      }
+
+      .hero-meta {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .metric-card {
+        border: 1px solid rgba(73, 96, 163, 0.35);
+        border-radius: 12px;
+        padding: 10px 12px;
+        background: rgba(15, 26, 60, 0.85);
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .metric-label {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .metric-value {
+        font-weight: 700;
+        font-size: 16px;
+      }
+
+      .chart-card {
+        border: 1px solid rgba(73, 96, 163, 0.35);
+        border-radius: 14px;
+        padding: 10px 12px 12px;
+        background: rgba(14, 24, 56, 0.82);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .chart-title {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .chart-title small {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .chart-wrap {
+        width: 100%;
+        height: 180px;
+        border-radius: 12px;
+        border: 1px dashed rgba(122, 160, 255, 0.45);
+        background: rgba(16, 28, 66, 0.6);
+        padding: 8px;
+        display: flex;
+        align-items: stretch;
+      }
+
+      svg.chart {
+        width: 100%;
+        height: 100%;
+      }
+
+      .holdings-card {
+        border: 1px solid rgba(73, 96, 163, 0.35);
+        border-radius: 14px;
+        padding: 12px;
+        background: rgba(14, 24, 56, 0.82);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .holdings-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .field label {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .formula-row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .formula-card {
+        border: 1px solid rgba(73, 96, 163, 0.35);
+        border-radius: 12px;
+        padding: 10px 12px;
+        background: rgba(16, 27, 60, 0.92);
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .formula-title {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .formula-value {
+        font-weight: 700;
+        font-size: 16px;
+      }
+
+      .formula-note {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .page-footer {
+        margin-top: 4px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px dashed rgba(122, 160, 255, 0.45);
+        color: var(--muted);
+        font-size: 12px;
+        background: rgba(14, 24, 56, 0.7);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 14px;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .footer-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .legend-chip {
+        padding: 4px 8px;
+        border-radius: 999px;
+        border: 1px solid rgba(122, 160, 255, 0.4);
+        background: rgba(17, 29, 66, 0.85);
+        color: var(--text);
+      }
+
+      .legend-chip.up {
+        border-color: rgba(255, 111, 145, 0.5);
+        color: var(--up);
+      }
+
+      .legend-chip.down {
+        border-color: rgba(77, 208, 225, 0.5);
+        color: var(--down);
+      }
+
+      @media (max-width: 1200px) {
+        .layout,
+        .layout.panel-hidden {
+          grid-template-columns: 1fr;
+        }
+
+        .panel.hidden {
+          display: none;
+        }
+      }
+    </style>
   </head>
   <body>
-    <div class="bg-orb orb-1"></div>
-    <div class="bg-orb orb-2"></div>
-    <div class="bg-grid"></div>
-
     <div class="page">
       <header class="topbar">
         <div class="brand">
           <span class="brand-mark"></span>
           <div>
-            <div class="brand-title">Leek Fund</div>
-            <div class="brand-subtitle">基金监控台</div>
+            <div class="brand-title">Leek Fund Demo</div>
+            <div class="brand-subtitle">列表 · 详情 · 走势 · 持仓 · 排序</div>
           </div>
         </div>
-        <div class="search">
-          <input type="text" placeholder="搜索基金代码 / 名称" />
-          <span class="search-tag">实时</span>
-        </div>
-        <div class="actions">
-          <button class="button ghost">刷新</button>
-          <button class="button primary">新建列表</button>
-        </div>
+        <div class="topbar-hint">演示页面：不连接真实数据</div>
       </header>
 
-      <div class="layout">
-        <aside class="panel left-panel">
+      <div id="layout" class="layout">
+        <aside id="leftPanel" class="panel left-panel">
           <div class="panel-header">
             <div>
               <div class="panel-title">基金列表</div>
-          <div class="panel-subtitle">列表数量 · FundList[]</div>
+              <div id="listSubtitle" class="panel-subtitle">选择一个列表</div>
             </div>
-            <button class="button ghost small">管理</button>
+            <button id="togglePanelBtn" class="button ghost small" type="button">隐藏</button>
           </div>
-          <div class="list-error">
-            数据加载失败，已切换到本地缓存。请检查备份文件。
-          </div>
-          <div class="list-group">
-            <button class="list-item active">
-              <div class="list-name">核心持仓</div>
-              <div class="list-meta">fund_codes.length: 12</div>
+          <div id="leftPanelBody" class="left-panel-body"></div>
+          <div class="collapse-row">
+            <button id="collapseBtn" class="button ghost small collapse-btn" type="button">
+              <span>⟨</span>
+              <span>收起列表面板</span>
             </button>
-            <button class="list-item">
-              <div class="list-name">稳健收益</div>
-              <div class="list-meta">fund_codes.length: 6</div>
-            </button>
-            <button class="list-item">
-              <div class="list-name">行业轮动</div>
-              <div class="list-meta">fund_codes.length: 9</div>
-            </button>
-            <button class="list-item">
-              <div class="list-name">长期观察</div>
-              <div class="list-meta">fund_codes.length: 5</div>
-            </button>
-            <button class="list-item">
-              <div class="list-name">主题策略</div>
-              <div class="list-meta">fund_codes.length: 7</div>
-            </button>
-          </div>
-          <div class="collapse">
-            <span>‹</span>
-            <div>收起列表</div>
           </div>
         </aside>
 
         <main class="panel middle-panel">
           <div class="panel-header">
             <div>
-              <div class="panel-title">核心持仓</div>
-              <div class="panel-subtitle">
-                refreshIntervalMs · FundSummary[]
-              </div>
+              <div id="activeListTitle" class="panel-title">基金</div>
+              <div id="activeListMeta" class="panel-subtitle">列表未选择</div>
             </div>
-            <div class="panel-actions">
-              <button class="button ghost small">添加基金</button>
-              <button class="button primary small">导入</button>
-            </div>
+            <div class="panel-subtitle">排序支持三态：降序 / 升序 / 不排序</div>
           </div>
-          <div class="table">
-            <div class="table-head">
-              <span>name</span>
-              <span>net_value</span>
-              <span>daily_change_percent</span>
-              <span>update_time</span>
-            </div>
-            <div class="table-row active">
-              <div>
-                <div class="fund-name">中证新能源精选</div>
-                <div class="fund-code">code: 160222</div>
+          <div class="middle-panel-body">
+            <div class="toolbar">
+              <div class="toolbar-group">
+                <span class="toolbar-label">排序字段</span>
+                <button class="sort-btn" data-field="dailyChangePercent" type="button">
+                  当日涨跌幅 <span class="sort-icon">未排序</span>
+                </button>
+                <button class="sort-btn" data-field="dailyChangeAmount" type="button">
+                  当日涨跌额 <span class="sort-icon">未排序</span>
+                </button>
+                <button class="sort-btn" data-field="holdingAmount" type="button">
+                  持仓金额 <span class="sort-icon">未排序</span>
+                </button>
               </div>
-              <div class="value">net_value: 3.284</div>
-              <div class="delta up">daily_change_percent: +1.32%</div>
-              <div class="time">update_time: 14:35</div>
-            </div>
-            <div class="table-row">
-              <div>
-                <div class="fund-name">天弘指数增强</div>
-                <div class="fund-code">code: 001012</div>
+              <div class="toolbar-group add-form">
+                <span class="toolbar-label">添加基金</span>
+                <input id="addCode" class="input" inputmode="numeric" maxlength="6" placeholder="基金代码" />
+                <input id="addName" class="input" placeholder="基金名称" />
+                <button id="addFundBtn" class="button primary small" type="button">添加</button>
               </div>
-              <div class="value">net_value: 1.926</div>
-              <div class="delta down">daily_change_percent: -0.48%</div>
-              <div class="time">update_time: 14:35</div>
+              <div id="addHint" class="hint-text">请输入 6 位基金代码与名称</div>
             </div>
-            <div class="table-row">
-              <div>
-                <div class="fund-name">广发医疗健康</div>
-                <div class="fund-code">code: 003095</div>
+
+            <section class="fund-list">
+              <div class="fund-head">
+                <span>基金</span>
+                <span>持仓金额</span>
+                <span>当日涨跌幅</span>
+                <span>当日涨跌额</span>
+                <span style="text-align: right">操作</span>
               </div>
-              <div class="value">net_value: 2.114</div>
-              <div class="delta up">daily_change_percent: +0.62%</div>
-              <div class="time">update_time: 14:34</div>
-            </div>
-            <div class="table-row">
-              <div>
-                <div class="fund-name">华夏红利优选</div>
-                <div class="fund-code">code: 000021</div>
-              </div>
-              <div class="value">net_value: 1.582</div>
-              <div class="delta flat">daily_change_percent: +0.05%</div>
-              <div class="time">update_time: 14:34</div>
-            </div>
-            <div class="table-row">
-              <div>
-                <div class="fund-name">易方达科技创新</div>
-                <div class="fund-code">code: 008911</div>
-              </div>
-              <div class="value">net_value: 2.468</div>
-              <div class="delta down">daily_change_percent: -0.91%</div>
-              <div class="time">update_time: 14:33</div>
-            </div>
-          </div>
-          <div class="table-footer">
-            <div class="pill">累计净值趋势已同步</div>
-            <div class="hint">选择基金后查看右侧详情</div>
+              <div id="fundBody" class="fund-body"></div>
+            </section>
           </div>
         </main>
 
@@ -146,65 +711,725 @@
           <div class="panel-header">
             <div>
               <div class="panel-title">基金详情</div>
-            <div class="panel-subtitle">code · name</div>
+              <div id="detailSubtitle" class="panel-subtitle">选择基金后展示详情</div>
             </div>
-            <button class="button ghost small">置顶</button>
+            <div id="detailSortHint" class="panel-subtitle">成本与涨跌额为演示计算</div>
           </div>
-          <div class="detail-cards">
-            <div class="detail-card">
-              <div class="detail-label">net_value</div>
-              <div class="detail-value">3.284</div>
-              <div class="detail-change up">change_percent: +1.32%</div>
-            </div>
-            <div class="detail-card">
-              <div class="detail-label">update_time</div>
-              <div class="detail-value">2026-01-21 14:35</div>
-              <div class="detail-change">FundDetail</div>
-            </div>
-          </div>
-          <div class="chart-card">
-            <div class="chart-header">
-              <div>
-                <div class="panel-title">走势曲线</div>
-                <div class="panel-subtitle">FundTrend.window</div>
-              </div>
-              <div class="segmented">
-                <button class="segmented-btn active">实时净值</button>
-                <button class="segmented-btn">趋势</button>
-                <button class="segmented-btn">累计</button>
-              </div>
-            </div>
-            <div class="chart-placeholder">
-              <div class="chart-line"></div>
-            </div>
-          </div>
-          <div class="info-grid">
-            <div class="info-item">
-              <div class="info-label">基金规模</div>
-              <div class="info-value">91.6 亿</div>
-            </div>
-            <div class="info-item">
-              <div class="info-label">基金经理</div>
-              <div class="info-value">林霖</div>
-            </div>
-            <div class="info-item">
-              <div class="info-label">成立时间</div>
-              <div class="info-value">2019/07/16</div>
-            </div>
-            <div class="info-item">
-              <div class="info-label">风险等级</div>
-              <div class="info-value">中高</div>
-            </div>
-          </div>
-          <div class="note-card">
-            <div class="panel-title">操作建议</div>
-            <div class="note-text">
-              今日出现放量反弹，建议观察 2 个交易日后再决定是否加仓。
-            </div>
-            <button class="button primary small">添加提醒</button>
-          </div>
+          <div id="detailBody" class="detail-body"></div>
         </aside>
       </div>
+
+      <footer class="page-footer">
+        <div>
+          Demo 说明：本页面为交互演示，所有数据均为本地示例，不会写入生产数据。
+          示例数据规模：3 个列表 / 21 只基金。
+        </div>
+        <div class="footer-legend">
+          <span class="legend-chip up">上涨 = 正值</span>
+          <span class="legend-chip down">下跌 = 负值</span>
+          <span class="legend-chip">不排序 = 默认顺序</span>
+          <span class="legend-chip">每份成本 = 持仓金额 ÷ 持仓份额</span>
+          <span class="legend-chip">当日涨跌额 = 持仓金额 × 当日涨跌幅</span>
+        </div>
+      </footer>
     </div>
+
+    <script>
+      const sortDirections = ["none", "descending", "ascending"];
+      const sortDirectionLabels = {
+        none: "未排序",
+        descending: "降序",
+        ascending: "升序",
+      };
+      const sortFieldLabels = {
+        dailyChangePercent: "当日涨跌幅",
+        dailyChangeAmount: "当日涨跌额",
+        holdingAmount: "持仓金额",
+      };
+
+      const sampleLists = createSampleLists();
+      const state = {
+        panelVisible: true,
+        lists: sampleLists,
+        activeListId: sampleLists[0]?.id ?? null,
+        selectedFundId: sampleLists[0]?.fundOrder[0] ?? null,
+        sortPreference: {
+          field: null,
+          direction: "none",
+          isActive: false,
+        },
+        addMessage: "",
+      };
+
+      const layoutEl = document.getElementById("layout");
+      const leftPanelEl = document.getElementById("leftPanel");
+      const leftPanelBodyEl = document.getElementById("leftPanelBody");
+      const listSubtitleEl = document.getElementById("listSubtitle");
+      const activeListTitleEl = document.getElementById("activeListTitle");
+      const activeListMetaEl = document.getElementById("activeListMeta");
+      const fundBodyEl = document.getElementById("fundBody");
+      const detailBodyEl = document.getElementById("detailBody");
+      const detailSubtitleEl = document.getElementById("detailSubtitle");
+      const addCodeEl = document.getElementById("addCode");
+      const addNameEl = document.getElementById("addName");
+      const addHintEl = document.getElementById("addHint");
+      const togglePanelBtnEl = document.getElementById("togglePanelBtn");
+      const collapseBtnEl = document.getElementById("collapseBtn");
+      const addFundBtnEl = document.getElementById("addFundBtn");
+      const sortButtons = Array.from(document.querySelectorAll(".sort-btn"));
+
+      togglePanelBtnEl.addEventListener("click", () => {
+        state.panelVisible = !state.panelVisible;
+        render();
+      });
+
+      collapseBtnEl.addEventListener("click", () => {
+        state.panelVisible = false;
+        render();
+      });
+
+      addFundBtnEl.addEventListener("click", handleAddFund);
+      addCodeEl.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          handleAddFund();
+        }
+      });
+      addNameEl.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          handleAddFund();
+        }
+      });
+
+      sortButtons.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const field = btn.dataset.field;
+          if (!field) return;
+          toggleSort(field);
+        });
+      });
+
+      render();
+
+      function render() {
+        renderPanelVisibility();
+        renderLists();
+        renderFunds();
+        renderDetail();
+        renderSortButtons();
+        renderAddHint();
+        renderControlStates();
+      }
+
+      function renderPanelVisibility() {
+        layoutEl.classList.toggle("panel-hidden", !state.panelVisible);
+        leftPanelEl.classList.toggle("hidden", !state.panelVisible);
+        togglePanelBtnEl.textContent = state.panelVisible ? "隐藏" : "显示";
+        collapseBtnEl.disabled = !state.panelVisible;
+        collapseBtnEl.textContent = state.panelVisible
+          ? "⟨ 收起列表面板"
+          : "⟩ 面板已隐藏";
+      }
+
+      function getActiveList() {
+        return state.lists.find((list) => list.id === state.activeListId) ?? null;
+      }
+
+      function renderLists() {
+        const activeList = getActiveList();
+        if (!state.lists.length) {
+          leftPanelBodyEl.innerHTML = emptyState(
+            "暂无列表",
+            "请先创建列表后再进行基金管理。"
+          );
+          listSubtitleEl.textContent = "列表数量：0";
+          activeListTitleEl.textContent = "基金";
+          activeListMetaEl.textContent = "列表未选择";
+          return;
+        }
+
+        const listItems = state.lists
+          .map((list) => {
+            const fundCount = list.fundOrder.length;
+            const activeClass = list.id === state.activeListId ? "active" : "";
+            return `
+              <button class="list-item ${activeClass}" data-list-id="${list.id}" type="button">
+                <div class="list-name">${escapeHtml(list.name)}</div>
+                <div class="list-meta">基金数量：${fundCount}</div>
+              </button>
+            `;
+          })
+          .join("");
+
+        leftPanelBodyEl.innerHTML = listItems;
+        listSubtitleEl.textContent = `列表数量：${state.lists.length}`;
+        activeListTitleEl.textContent = activeList?.name ?? "基金";
+        activeListMetaEl.textContent = activeList
+          ? `默认顺序基金数：${activeList.fundOrder.length}`
+          : "列表未选择";
+
+        leftPanelBodyEl.querySelectorAll(".list-item").forEach((button) => {
+          button.addEventListener("click", () => {
+            const listId = button.dataset.listId;
+            if (!listId) return;
+            state.activeListId = listId;
+            const list = getActiveList();
+            state.selectedFundId = list?.fundOrder[0] ?? null;
+            render();
+          });
+        });
+      }
+
+      function renderFunds() {
+        const activeList = getActiveList();
+        if (!activeList) {
+          fundBodyEl.innerHTML = emptyState(
+            "未选择列表",
+            "请从左侧选择一个基金列表。"
+          );
+          return;
+        }
+
+        const visibleFunds = getVisibleFunds(activeList);
+        if (!visibleFunds.length) {
+          fundBodyEl.innerHTML = emptyState(
+            "列表暂无基金",
+            "请通过上方输入框添加基金。"
+          );
+          return;
+        }
+
+        const rows = visibleFunds
+          .map((fund) => {
+            const holding = getHolding(activeList, fund.id);
+            const dailyChangeAmount = computeDailyChangeAmount(
+              holding.holdingAmount,
+              fund.dailyChangePercent
+            );
+            const changeClass = deltaClass(fund.dailyChangePercent);
+            const selectedClass = fund.id === state.selectedFundId ? "active" : "";
+            return `
+              <div class="fund-row ${selectedClass}" data-fund-id="${fund.id}">
+                <div>
+                  <div class="fund-name">${escapeHtml(fund.name)}</div>
+                  <div class="fund-code">代码：${escapeHtml(fund.code)}</div>
+                </div>
+                <div>${formatCurrency(holding.holdingAmount)}</div>
+                <div class="delta ${changeClass}">${formatPercent(fund.dailyChangePercent)}</div>
+                <div class="delta ${deltaClassFromAmount(dailyChangeAmount)}">${formatCurrency(dailyChangeAmount)}</div>
+                <div class="row-actions">
+                  <button class="button ghost small" data-remove-id="${fund.id}" type="button">删除</button>
+                </div>
+              </div>
+            `;
+          })
+          .join("");
+
+        fundBodyEl.innerHTML = rows;
+
+        fundBodyEl.querySelectorAll(".fund-row").forEach((row) => {
+          row.addEventListener("click", (event) => {
+            const removeTarget = event.target.closest("[data-remove-id]");
+            if (removeTarget) return;
+            const fundId = row.dataset.fundId;
+            if (!fundId) return;
+            state.selectedFundId = fundId;
+            render();
+          });
+        });
+
+        fundBodyEl.querySelectorAll("[data-remove-id]").forEach((button) => {
+          button.addEventListener("click", (event) => {
+            event.stopPropagation();
+            const fundId = button.dataset.removeId;
+            if (!fundId) return;
+            removeFund(activeList, fundId);
+          });
+        });
+      }
+
+      function renderDetail() {
+        const activeList = getActiveList();
+        const selectedFund = getSelectedFund(activeList);
+        if (!activeList || !selectedFund) {
+          detailSubtitleEl.textContent = "选择基金后展示详情";
+          detailBodyEl.innerHTML = emptyState(
+            "暂无基金详情",
+            "请从中间列表选择一只基金。"
+          );
+          return;
+        }
+
+        const holding = getHolding(activeList, selectedFund.id);
+        const costPerShare = computeCostPerShare(holding.holdingAmount, holding.holdingShares);
+        const dailyChangeAmount = computeDailyChangeAmount(
+          holding.holdingAmount,
+          selectedFund.dailyChangePercent
+        );
+        const changeClass = deltaClass(selectedFund.dailyChangePercent);
+
+        detailSubtitleEl.textContent = `${selectedFund.code} · ${selectedFund.name}`;
+
+        detailBodyEl.innerHTML = `
+          <section class="detail-hero">
+            <div class="hero-title">${escapeHtml(selectedFund.name)}</div>
+            <div class="hero-meta">基金代码：${escapeHtml(selectedFund.code)}</div>
+            <div class="hero-meta">默认顺序位置：#${selectedFund.defaultIndex + 1}</div>
+          </section>
+
+          <section class="detail-grid">
+            <div class="metric-card">
+              <div class="metric-label">当日涨跌幅</div>
+              <div class="metric-value delta ${changeClass}">${formatPercent(selectedFund.dailyChangePercent)}</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">持仓金额</div>
+              <div class="metric-value">${formatCurrency(holding.holdingAmount)}</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">当日涨跌额</div>
+              <div class="metric-value delta ${deltaClassFromAmount(dailyChangeAmount)}">${formatCurrency(dailyChangeAmount)}</div>
+            </div>
+          </section>
+
+          <section class="chart-card">
+            <div class="chart-title">
+              <div class="panel-title">走势曲线</div>
+              <small>示例趋势点：${selectedFund.trendPoints.length} 个</small>
+            </div>
+            <div class="chart-wrap">
+              ${renderChart(selectedFund.trendPoints)}
+            </div>
+          </section>
+
+          <section class="holdings-card">
+            <div class="panel-title">持仓设置</div>
+            <div class="panel-subtitle">设置金额与份额后，系统按公式计算成本与当日涨跌额</div>
+            <div class="holdings-grid">
+              <div class="field">
+                <label for="holdingAmount">持仓金额</label>
+                <input id="holdingAmount" class="input" type="number" min="0" step="100" value="${holding.holdingAmount}" />
+              </div>
+              <div class="field">
+                <label for="holdingShares">持仓份额</label>
+                <input id="holdingShares" class="input" type="number" min="0" step="10" value="${holding.holdingShares}" />
+              </div>
+            </div>
+            <div id="holdingHint" class="hint-text">份额为 0 时不会计算每份成本</div>
+            <div class="formula-row">
+              <div class="formula-card">
+                <div class="formula-title">每份成本</div>
+                <div class="formula-value">${costPerShare === null ? "--" : formatCurrency(costPerShare)}</div>
+                <div class="formula-note">公式：持仓金额 ÷ 持仓份额（份额需大于 0）</div>
+              </div>
+              <div class="formula-card">
+                <div class="formula-title">当日涨跌额</div>
+                <div class="formula-value delta ${deltaClassFromAmount(dailyChangeAmount)}">${formatCurrency(dailyChangeAmount)}</div>
+                <div class="formula-note">公式：持仓金额 × 当日涨跌幅</div>
+              </div>
+            </div>
+          </section>
+        `;
+
+        const amountInput = document.getElementById("holdingAmount");
+        const sharesInput = document.getElementById("holdingShares");
+        const holdingHint = document.getElementById("holdingHint");
+
+        amountInput.addEventListener("input", () => {
+          updateHolding(activeList, selectedFund.id, {
+            holdingAmount: clampNonNegative(amountInput.value),
+          });
+        });
+        sharesInput.addEventListener("input", () => {
+          updateHolding(activeList, selectedFund.id, {
+            holdingShares: clampNonNegative(sharesInput.value),
+          });
+        });
+
+        holdingHint.textContent =
+          holding.holdingShares > 0
+            ? "份额大于 0，已显示每份成本"
+            : "份额为 0 时不会计算每份成本";
+        holdingHint.classList.toggle("error", holding.holdingShares <= 0);
+      }
+
+      function renderSortButtons() {
+        sortButtons.forEach((button) => {
+          const field = button.dataset.field;
+          if (!field) return;
+          const isActiveField = state.sortPreference.field === field;
+          const direction = isActiveField ? state.sortPreference.direction : "none";
+          button.classList.toggle("active", isActiveField && direction !== "none");
+          const icon = button.querySelector(".sort-icon");
+          if (icon) {
+            icon.textContent = sortDirectionLabels[direction];
+          }
+          button.setAttribute(
+            "title",
+            `${sortFieldLabels[field]}：点击在降序 / 升序 / 不排序之间切换`
+          );
+        });
+      }
+
+      function renderAddHint() {
+        if (state.addMessage) {
+          addHintEl.textContent = state.addMessage;
+          addHintEl.classList.add("error");
+          return;
+        }
+        addHintEl.textContent = "请输入 6 位基金代码与名称";
+        addHintEl.classList.remove("error");
+      }
+
+      function renderControlStates() {
+        const hasActiveList = Boolean(getActiveList());
+        addFundBtnEl.disabled = !hasActiveList;
+        addCodeEl.disabled = !hasActiveList;
+        addNameEl.disabled = !hasActiveList;
+        sortButtons.forEach((btn) => {
+          btn.disabled = !hasActiveList;
+        });
+        if (!hasActiveList) {
+          state.addMessage = "";
+        }
+      }
+
+      function toggleSort(field) {
+        const pref = state.sortPreference;
+        if (pref.field !== field) {
+          pref.field = field;
+          pref.direction = "descending";
+          pref.isActive = true;
+          render();
+          return;
+        }
+
+        const currentIndex = sortDirections.indexOf(pref.direction);
+        const nextIndex = (currentIndex + 1) % sortDirections.length;
+        pref.direction = sortDirections[nextIndex];
+        pref.isActive = pref.direction !== "none";
+        if (!pref.isActive) {
+          pref.field = field;
+        }
+        render();
+      }
+
+      function getVisibleFunds(activeList) {
+        const funds = activeList.fundOrder
+          .map((fundId, index) => {
+            const fund = activeList.fundsById[fundId];
+            if (!fund) return null;
+            return { ...fund, defaultIndex: index };
+          })
+          .filter(Boolean);
+
+        const pref = state.sortPreference;
+        if (!pref.isActive || pref.direction === "none" || !pref.field) {
+          return funds;
+        }
+
+        const sorted = [...funds];
+        sorted.sort((a, b) => {
+          const valueA = getSortValue(activeList, a, pref.field);
+          const valueB = getSortValue(activeList, b, pref.field);
+          if (valueA === valueB) {
+            return a.defaultIndex - b.defaultIndex;
+          }
+          const diff = valueA - valueB;
+          return pref.direction === "ascending" ? diff : -diff;
+        });
+        return sorted;
+      }
+
+      function getSortValue(activeList, fund, field) {
+        const holding = getHolding(activeList, fund.id);
+        if (field === "dailyChangePercent") return fund.dailyChangePercent;
+        if (field === "holdingAmount") return holding.holdingAmount;
+        if (field === "dailyChangeAmount") {
+          return computeDailyChangeAmount(holding.holdingAmount, fund.dailyChangePercent);
+        }
+        return fund.defaultIndex;
+      }
+
+      function getSelectedFund(activeList) {
+        if (!activeList || !state.selectedFundId) return null;
+        return activeList.fundsById[state.selectedFundId] ?? null;
+      }
+
+      function getHolding(activeList, fundId) {
+        const existing = activeList.holdingsByFundId[fundId];
+        if (existing) return existing;
+        const created = { holdingAmount: 0, holdingShares: 0 };
+        activeList.holdingsByFundId[fundId] = created;
+        return created;
+      }
+
+      function updateHolding(activeList, fundId, patch) {
+        const holding = getHolding(activeList, fundId);
+        const next = {
+          holdingAmount:
+            patch.holdingAmount ?? holding.holdingAmount,
+          holdingShares:
+            patch.holdingShares ?? holding.holdingShares,
+        };
+        activeList.holdingsByFundId[fundId] = next;
+        render();
+      }
+
+      function handleAddFund() {
+        const activeList = getActiveList();
+        if (!activeList) {
+          state.addMessage = "请先选择一个列表";
+          render();
+          return;
+        }
+        const code = addCodeEl.value.trim();
+        const name = addNameEl.value.trim();
+
+        if (!/^\d{6}$/.test(code)) {
+          state.addMessage = "基金代码必须为 6 位数字";
+          render();
+          return;
+        }
+        if (!name) {
+          state.addMessage = "基金名称不能为空";
+          render();
+          return;
+        }
+
+        const duplicate = Object.values(activeList.fundsById).some(
+          (fund) => fund.code === code
+        );
+        if (duplicate) {
+          state.addMessage = "该基金已存在于当前列表";
+          render();
+          return;
+        }
+
+        const newFundId = `fund-${code}`;
+        const defaultIndex = activeList.fundOrder.length;
+        const newFund = {
+          id: newFundId,
+          code,
+          name,
+          dailyChangePercent: demoPercentFromCode(code),
+          trendPoints: demoTrendFromCode(code),
+          defaultIndex,
+        };
+
+        activeList.fundsById[newFundId] = newFund;
+        activeList.fundOrder.push(newFundId);
+        activeList.holdingsByFundId[newFundId] = { holdingAmount: 0, holdingShares: 0 };
+        state.selectedFundId = newFundId;
+        state.addMessage = "添加成功";
+        addCodeEl.value = "";
+        addNameEl.value = "";
+        render();
+      }
+
+      function removeFund(activeList, fundId) {
+        const idx = activeList.fundOrder.indexOf(fundId);
+        if (idx === -1) return;
+        activeList.fundOrder.splice(idx, 1);
+        delete activeList.fundsById[fundId];
+        delete activeList.holdingsByFundId[fundId];
+
+        if (state.selectedFundId === fundId) {
+          state.selectedFundId = activeList.fundOrder[idx] ?? activeList.fundOrder[idx - 1] ?? null;
+        }
+        state.addMessage = "";
+        render();
+      }
+
+      function computeCostPerShare(amount, shares) {
+        if (shares <= 0) return null;
+        return amount / shares;
+      }
+
+      function computeDailyChangeAmount(amount, percent) {
+        return amount * (percent / 100);
+      }
+
+      function clampNonNegative(value) {
+        const num = Number(value);
+        if (!Number.isFinite(num) || num < 0) return 0;
+        return num;
+      }
+
+      function deltaClass(percent) {
+        if (percent > 0.0001) return "up";
+        if (percent < -0.0001) return "down";
+        return "flat";
+      }
+
+      function deltaClassFromAmount(amount) {
+        if (amount > 0.0001) return "up";
+        if (amount < -0.0001) return "down";
+        return "flat";
+      }
+
+      function formatCurrency(value) {
+        const num = Number(value) || 0;
+        const sign = num < 0 ? "-" : "";
+        const abs = Math.abs(num);
+        return `${sign}¥${abs.toFixed(2)}`;
+      }
+
+      function formatPercent(value) {
+        const num = Number(value) || 0;
+        const sign = num > 0 ? "+" : "";
+        return `${sign}${num.toFixed(2)}%`;
+      }
+
+      function emptyState(title, subtitle) {
+        return `
+          <div class="empty-state">
+            <div class="panel-title">${escapeHtml(title)}</div>
+            <div class="panel-subtitle">${escapeHtml(subtitle)}</div>
+          </div>
+        `;
+      }
+
+      function renderChart(points) {
+        if (!points || points.length < 2) {
+          return "<div class=\"empty-state\">暂无走势数据</div>";
+        }
+        const width = 640;
+        const height = 180;
+        const padding = 12;
+        const min = Math.min(...points);
+        const max = Math.max(...points);
+        const range = max - min || 1;
+
+        const coords = points
+          .map((value, index) => {
+            const x = padding + (index / (points.length - 1)) * (width - padding * 2);
+            const y = padding + ((max - value) / range) * (height - padding * 2);
+            return `${x.toFixed(2)},${y.toFixed(2)}`;
+          })
+          .join(" ");
+
+        const stroke = points[points.length - 1] - points[0] >= 0 ? "#7bffb1" : "#4dd0e1";
+
+        return `
+          <svg class="chart" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" aria-label="基金走势示意图">
+            <defs>
+              <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="${stroke}" stop-opacity="0.28"></stop>
+                <stop offset="100%" stop-color="${stroke}" stop-opacity="0.02"></stop>
+              </linearGradient>
+            </defs>
+            <polyline fill="none" stroke="${stroke}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" points="${coords}"></polyline>
+            <polygon fill="url(#chartFill)" points="${coords} ${width - padding},${height - padding} ${padding},${height - padding}"></polygon>
+          </svg>
+        `;
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+
+      function createSampleLists() {
+        const listConfigs = [
+          { id: "core", name: "核心持仓" },
+          { id: "steady", name: "稳健收益" },
+          { id: "rotate", name: "行业轮动" },
+        ];
+
+        const fundSeeds = [
+          ["160222", "中证新能源精选", 1.32],
+          ["001012", "天弘指数增强", -0.48],
+          ["003095", "广发医疗健康", 0.62],
+          ["000021", "华夏红利优选", 0.05],
+          ["008911", "易方达科技创新", -0.91],
+          ["161725", "招商中证白酒", 2.14],
+          ["110022", "易方达消费行业", -1.12],
+          ["519674", "银河创新成长", 0.84],
+          ["260108", "景顺长城新兴成长", 0.33],
+          ["005827", "广发中证环保", -0.27],
+          ["501058", "华夏科创50", 0.74],
+          ["002190", "农银新能源主题", 1.06],
+          ["006113", "富国价值优势", -0.36],
+          ["004752", "汇添富消费升级", 0.58],
+          ["090010", "大成中证红利", -0.11],
+          ["161039", "富国中证1000", 1.91],
+          ["040046", "华安纳斯达克", -2.04],
+          ["008888", "嘉实瑞虹三年", 0.42],
+          ["010358", "鹏华品质优选", -0.66],
+          ["012772", "中欧时代先锋", 1.18],
+          ["007994", "兴全合宜", 0.29],
+        ];
+
+        const perListCounts = [8, 7, 6];
+        let cursor = 0;
+
+        return listConfigs.map((config, listIndex) => {
+          const count = perListCounts[listIndex];
+          const seeds = fundSeeds.slice(cursor, cursor + count);
+          cursor += count;
+          return createListFromSeeds(config, seeds);
+        });
+      }
+
+      function createListFromSeeds(config, seeds) {
+        const fundsById = {};
+        const holdingsByFundId = {};
+        const fundOrder = seeds.map(([code, name, percent], index) => {
+          const id = `fund-${config.id}-${code}`;
+          fundsById[id] = {
+            id,
+            code,
+            name,
+            dailyChangePercent: percent,
+            trendPoints: demoTrendFromCode(code),
+            defaultIndex: index,
+          };
+          holdingsByFundId[id] = {
+            holdingAmount: demoHoldingAmount(index),
+            holdingShares: demoHoldingShares(index),
+          };
+          return id;
+        });
+
+        return {
+          id: config.id,
+          name: config.name,
+          fundOrder,
+          fundsById,
+          holdingsByFundId,
+        };
+      }
+
+      function demoHoldingAmount(index) {
+        return 5000 + index * 1800;
+      }
+
+      function demoHoldingShares(index) {
+        return 1200 + index * 140;
+      }
+
+      function demoPercentFromCode(code) {
+        const seed = Number(code.slice(-3));
+        const value = ((seed % 23) - 11) / 6.5;
+        return Number(value.toFixed(2));
+      }
+
+      function demoTrendFromCode(code) {
+        const base = Number(code.slice(-2)) || 50;
+        const points = [];
+        let current = 1 + (base % 13) / 20;
+        for (let i = 0; i < 24; i += 1) {
+          const drift = Math.sin((i + base) / 4) * 0.03;
+          const noise = ((base * (i + 3)) % 7 - 3) * 0.004;
+          current = Math.max(0.6, current + drift + noise);
+          points.push(Number(current.toFixed(3)));
+        }
+        return points;
+      }
+    </script>
   </body>
 </html>

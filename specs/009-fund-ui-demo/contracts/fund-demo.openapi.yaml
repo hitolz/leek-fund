@@ -1,0 +1,261 @@
+openapi: 3.0.3
+info:
+  title: Fund Demo UI Contract
+  version: 0.1.0
+  description: Contract for demo interactions that mirror current fund tracking behaviors using embedded sample data only (no live network or persistence).
+servers:
+  - url: https://demo.local
+paths:
+  /lists:
+    get:
+      summary: List fund lists
+      operationId: listFundLists
+      responses:
+        '200':
+          description: Available lists
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [lists, activeListId]
+                properties:
+                  activeListId:
+                    type: string
+                  lists:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FundList'
+  /lists/{listId}/panel:
+    put:
+      summary: Update list panel visibility
+      operationId: updatePanelVisibility
+      parameters:
+        - $ref: '#/components/parameters/ListId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [isVisible]
+              properties:
+                isVisible:
+                  type: boolean
+      responses:
+        '200':
+          description: Updated visibility state
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [listId, isVisible]
+                properties:
+                  listId:
+                    type: string
+                  isVisible:
+                    type: boolean
+  /lists/{listId}/funds:
+    get:
+      summary: List funds in a list
+      operationId: listFundsForList
+      description: Returns funds scoped to the active list together with the preserved default order used when sorting is set to none.
+      parameters:
+        - $ref: '#/components/parameters/ListId'
+      responses:
+        '200':
+          description: Funds scoped to the selected list
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [listId, funds, defaultOrder]
+                properties:
+                  listId:
+                    type: string
+                  defaultOrder:
+                    type: array
+                    items:
+                      type: string
+                  funds:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Fund'
+    post:
+      summary: Add a fund to the selected list
+      operationId: addFundToList
+      description: Adds a fund within the list scope only. In-list uniqueness is enforced by fund code, and the fund is appended to the default order.
+      parameters:
+        - $ref: '#/components/parameters/ListId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code, name]
+              properties:
+                code:
+                  type: string
+                name:
+                  type: string
+      responses:
+        '201':
+          description: Fund added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fund'
+  /lists/{listId}/funds/{fundId}:
+    delete:
+      summary: Remove a fund from the selected list
+      operationId: removeFundFromList
+      description: Removes a fund from the active list only and preserves the remaining default order positions.
+      parameters:
+        - $ref: '#/components/parameters/ListId'
+        - $ref: '#/components/parameters/FundId'
+      responses:
+        '204':
+          description: Fund removed
+  /lists/{listId}/sort:
+    put:
+      summary: Update sorting preference for a list view
+      operationId: updateSortPreference
+      parameters:
+        - $ref: '#/components/parameters/ListId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SortPreference'
+      responses:
+        '200':
+          description: Updated sort preference
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SortPreference'
+  /funds/{fundId}:
+    get:
+      summary: Fetch fund details and trend points
+      operationId: getFundDetails
+      parameters:
+        - $ref: '#/components/parameters/FundId'
+      responses:
+        '200':
+          description: Fund detail payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FundDetail'
+  /funds/{fundId}/holding:
+    put:
+      summary: Update holding inputs and derived metrics
+      operationId: updateFundHolding
+      parameters:
+        - $ref: '#/components/parameters/FundId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [holdingAmount, holdingShares]
+              properties:
+                holdingAmount:
+                  type: number
+                  minimum: 0
+                holdingShares:
+                  type: number
+                  minimum: 0
+      responses:
+        '200':
+          description: Holding with derived values
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Holding'
+components:
+  parameters:
+    ListId:
+      name: listId
+      in: path
+      required: true
+      schema:
+        type: string
+    FundId:
+      name: fundId
+      in: path
+      required: true
+      schema:
+        type: string
+  schemas:
+    FundList:
+      type: object
+      required: [id, name, fundOrder]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        fundOrder:
+          type: array
+          items:
+            type: string
+    Fund:
+      type: object
+      required: [id, code, name, dailyChangePercent, defaultIndex]
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        dailyChangePercent:
+          type: number
+        dailyChangeAmount:
+          type: number
+        holdingAmount:
+          type: number
+        defaultIndex:
+          type: integer
+          minimum: 0
+    FundDetail:
+      allOf:
+        - $ref: '#/components/schemas/Fund'
+        - type: object
+          required: [trendPoints]
+          properties:
+            trendPoints:
+              type: array
+              items:
+                type: number
+    Holding:
+      type: object
+      required: [fundId, holdingAmount, holdingShares]
+      properties:
+        fundId:
+          type: string
+        holdingAmount:
+          type: number
+          minimum: 0
+        holdingShares:
+          type: number
+          minimum: 0
+        costPerShare:
+          type: number
+        dailyChangeAmount:
+          type: number
+    SortPreference:
+      type: object
+      required: [field, direction, isActive]
+      properties:
+        field:
+          type: string
+          enum: [dailyChangePercent, dailyChangeAmount, holdingAmount]
+        direction:
+          type: string
+          enum: [descending, ascending, none]
+        isActive:
+          type: boolean

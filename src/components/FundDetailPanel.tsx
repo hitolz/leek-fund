@@ -31,7 +31,10 @@ export const FundDetailPanel: React.FC<FundDetailPanelProps> = ({
   if (loading) {
     return (
       <div className="fund-detail-panel empty">
-        <p>加载中...</p>
+        <div className="empty-state">
+          <div className="panel-title">正在加载详情</div>
+          <div className="panel-subtitle">请稍候，正在获取基金信息</div>
+        </div>
       </div>
     );
   }
@@ -39,7 +42,10 @@ export const FundDetailPanel: React.FC<FundDetailPanelProps> = ({
   if (error) {
     return (
       <div className="fund-detail-panel empty">
-        <p>{error}</p>
+        <div className="empty-state">
+          <div className="panel-title">详情加载失败</div>
+          <div className="panel-subtitle">{error}</div>
+        </div>
       </div>
     );
   }
@@ -47,37 +53,47 @@ export const FundDetailPanel: React.FC<FundDetailPanelProps> = ({
   if (!detail) {
     return (
       <div className="fund-detail-panel empty">
-        <p>👉 请选择一只基金查看详情</p>
+        <div className="empty-state">
+          <div className="panel-title">请选择基金</div>
+          <div className="panel-subtitle">选择基金后查看详情与走势</div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="fund-detail-panel">
-      <div className="fund-detail-header">
-        <div>
-          <h3>{detail.name}</h3>
-          <span className="fund-code">{detail.code}</span>
-        </div>
+      <div className="detail-hero">
+        <div className="panel-title">{detail.name}</div>
+        <div className="panel-subtitle">基金代码：{detail.code}</div>
         {detail.update_time && (
-          <span className="fund-detail-time">{detail.update_time}</span>
+          <div className="panel-subtitle">更新时间：{detail.update_time}</div>
         )}
       </div>
 
-      <div className="fund-detail-metrics">
-        <div className="fund-metric">
-          <span className="label">最新净值</span>
-          <span className="value">
+      <div className="detail-grid">
+        <div className="metric-card">
+          <div className="metric-label">最新净值</div>
+          <div className="metric-value">
             {detail.net_value !== null && detail.net_value !== undefined
               ? detail.net_value.toFixed(4)
               : "--"}
-          </span>
+          </div>
         </div>
-        <div className="fund-metric">
-          <span className="label">当日涨跌</span>
-          <span className="value">
+        <div className="metric-card">
+          <div className="metric-label">当日涨跌幅</div>
+          <div className="metric-value">
             {detail.change_percent ? `${detail.change_percent}%` : "--"}
-          </span>
+          </div>
+        </div>
+        <div className="metric-card">
+          <div className="metric-label">当日涨跌额</div>
+          <div className="metric-value">
+            {detail.daily_change_amount !== null &&
+            detail.daily_change_amount !== undefined
+              ? detail.daily_change_amount.toFixed(2)
+              : "--"}
+          </div>
         </div>
       </div>
 

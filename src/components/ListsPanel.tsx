@@ -19,7 +19,7 @@ export const ListsPanel: React.FC<ListsPanelProps> = ({
 }) => {
   const [newListName, setNewListName] = useState("");
   const [creating, setCreating] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [editingName, setEditingName] = useState("");
   const { createList, renameList, deleteList } = useTauriCommands();
 
@@ -48,7 +48,7 @@ export const ListsPanel: React.FC<ListsPanelProps> = ({
     }
   };
 
-  const handleRename = async (id: string) => {
+  const handleRename = async (id: number) => {
     if (!editingName.trim()) {
       if (showToast) {
         showToast("列表名称不能为空", "error");
@@ -70,7 +70,7 @@ export const ListsPanel: React.FC<ListsPanelProps> = ({
     }
   };
 
-  const handleDelete = async (id: string, name: string, fundCount: number) => {
+  const handleDelete = async (id: number, name: string, fundCount: number) => {
     const confirmMessage =
       fundCount > 0
         ? `确定删除列表"${name}"吗？将移除${fundCount}只基金。`
@@ -98,18 +98,14 @@ export const ListsPanel: React.FC<ListsPanelProps> = ({
 
   return (
     <div className="lists-panel">
-      <div className="panel-header">
-        <h3>我的列表</h3>
-      </div>
-
-      <div className="create-list-section">
+      <div className="list-create">
         <input
           type="text"
           value={newListName}
           onChange={(e) => setNewListName(e.target.value)}
           placeholder="新建列表"
           maxLength={64}
-          className="list-name-input"
+          className="input"
           disabled={creating}
           onKeyPress={(e) => {
             if (e.key === "Enter") {
@@ -120,7 +116,7 @@ export const ListsPanel: React.FC<ListsPanelProps> = ({
         <button
           onClick={handleCreateList}
           disabled={creating || !newListName.trim()}
-          className="btn-create"
+          className="button primary small"
         >
           {creating ? "创建中..." : "创建"}
         </button>
@@ -133,10 +129,10 @@ export const ListsPanel: React.FC<ListsPanelProps> = ({
           </div>
         ) : (
           lists.map((list) => (
-            <div
+            <button
               key={list.id}
               className={`list-item ${
-                selectedListId === list.id ? "selected" : ""
+                selectedListId === list.id ? "active" : ""
               }`}
               onClick={() => onSelectList(list.id)}
             >
@@ -147,7 +143,7 @@ export const ListsPanel: React.FC<ListsPanelProps> = ({
                     value={editingName}
                     onChange={(e) => setEditingName(e.target.value)}
                     maxLength={64}
-                    className="list-name-input-inline"
+                    className="input"
                     autoFocus
                     onKeyPress={(e) => {
                       if (e.key === "Enter") {
@@ -161,7 +157,7 @@ export const ListsPanel: React.FC<ListsPanelProps> = ({
                       e.stopPropagation();
                       handleRename(list.id);
                     }}
-                    className="btn-save-inline"
+                    className="icon-btn"
                   >
                     ✓
                   </button>
@@ -170,7 +166,7 @@ export const ListsPanel: React.FC<ListsPanelProps> = ({
                       e.stopPropagation();
                       setEditingId(null);
                     }}
-                    className="btn-cancel-inline"
+                    className="icon-btn"
                   >
                     ✕
                   </button>
@@ -179,8 +175,8 @@ export const ListsPanel: React.FC<ListsPanelProps> = ({
                 <>
                   <div className="list-info">
                     <span className="list-name">{list.name}</span>
-                    <span className="fund-count">
-                      {list.fund_codes.length}只基金
+                    <span className="list-meta">
+                      {list.fund_codes.length} 只基金
                     </span>
                   </div>
                   <div className="list-actions">
@@ -190,7 +186,7 @@ export const ListsPanel: React.FC<ListsPanelProps> = ({
                         setEditingId(list.id);
                         setEditingName(list.name);
                       }}
-                      className="btn-action"
+                      className="icon-btn"
                       title="重命名"
                     >
                       ✏️
@@ -200,7 +196,7 @@ export const ListsPanel: React.FC<ListsPanelProps> = ({
                         e.stopPropagation();
                         handleDelete(list.id, list.name, list.fund_codes.length);
                       }}
-                      className="btn-action"
+                      className="icon-btn"
                       title="删除"
                     >
                       🗑️
@@ -208,7 +204,7 @@ export const ListsPanel: React.FC<ListsPanelProps> = ({
                   </div>
                 </>
               )}
-            </div>
+            </button>
           ))
         )}
       </div>

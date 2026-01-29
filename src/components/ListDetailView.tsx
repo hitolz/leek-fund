@@ -168,7 +168,10 @@ export const ListDetailView: React.FC<ListDetailViewProps> = ({
   if (listId === null) {
     return (
       <div className="list-detail-view empty">
-        <p>👈 请选择一个列表查看详情</p>
+        <div className="empty-state">
+          <div className="panel-title">请选择一个列表</div>
+          <div className="panel-subtitle">从左侧选择列表后查看基金详情</div>
+        </div>
       </div>
     );
   }
@@ -176,7 +179,10 @@ export const ListDetailView: React.FC<ListDetailViewProps> = ({
   if (loading) {
     return (
       <div className="list-detail-view loading">
-        <p>加载中...</p>
+        <div className="empty-state">
+          <div className="panel-title">正在加载</div>
+          <div className="panel-subtitle">请稍候，正在同步基金列表</div>
+        </div>
       </div>
     );
   }
@@ -184,8 +190,8 @@ export const ListDetailView: React.FC<ListDetailViewProps> = ({
   if (funds.length === 0) {
     return (
       <div className="list-detail-view empty">
-        <h3>{listName}</h3>
-        <div className="list-add-fund">
+        <div className="panel-title">{listName}</div>
+        <div className="toolbar add-form">
           <input
             type="text"
             value={newFundCode}
@@ -199,92 +205,104 @@ export const ListDetailView: React.FC<ListDetailViewProps> = ({
             }}
             placeholder="输入基金代码添加"
             maxLength={6}
-            className="list-add-input"
+            className="input"
           />
-          <button onClick={handleAddFund} className="btn-add-inline">
+          <button onClick={handleAddFund} className="button primary small">
             添加
           </button>
         </div>
-        <p>列表为空，添加一些基金吧</p>
+        <div className="empty-state">
+          <div className="panel-subtitle">列表为空，添加一些基金吧</div>
+        </div>
       </div>
     );
   }
 
+  const sortLabel = getSortLabel(sortKey);
+
   return (
     <div className="list-detail-view">
-      <div className="detail-header">
-        <h3>{listName}</h3>
-        <span className="fund-count">{funds.length}只基金</span>
+      <div className="panel-header">
+        <div>
+          <div className="panel-title">{listName}</div>
+          <div className="panel-subtitle">
+            {funds.length} 只基金 · 当前排序：{sortLabel}
+          </div>
+        </div>
       </div>
 
-      <div className="list-add-fund">
-        <input
-          type="text"
-          value={newFundCode}
-          onChange={(e) =>
-            setNewFundCode(e.target.value.replace(/\D/g, "").slice(0, 6))
-          }
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              handleAddFund();
+      <div className="toolbar">
+        <div className="toolbar-group">
+          <span className="toolbar-label">排序字段</span>
+          {renderSortButton(
+            "daily_change_percent",
+            "当日涨跌幅",
+            sortKey,
+            sortOrder,
+            onSortKeyChange,
+            onSortOrderChange
+          )}
+          {renderSortButton(
+            "daily_change_amount",
+            "当日涨跌额",
+            sortKey,
+            sortOrder,
+            onSortKeyChange,
+            onSortOrderChange
+          )}
+          {renderSortButton(
+            "holding_amount",
+            "持仓金额",
+            sortKey,
+            sortOrder,
+            onSortKeyChange,
+            onSortOrderChange
+          )}
+        </div>
+        <div className="toolbar-group add-form">
+          <span className="toolbar-label">添加基金</span>
+          <input
+            type="text"
+            value={newFundCode}
+            onChange={(e) =>
+              setNewFundCode(e.target.value.replace(/\D/g, "").slice(0, 6))
             }
-          }}
-          placeholder="输入基金代码添加"
-          maxLength={6}
-          className="list-add-input"
-        />
-        <button onClick={handleAddFund} className="btn-add-inline">
-          添加
-        </button>
-      </div>
-
-      <div className="fund-sort">
-        <span className="fund-sort-label">排序字段</span>
-        <select
-          className="fund-sort-select"
-          value={sortKey}
-          onChange={(event) =>
-            onSortKeyChange(
-              event.target.value as
-                | "holding_amount"
-                | "daily_change_percent"
-                | "daily_change_amount"
-            )
-          }
-        >
-          <option value="daily_change_amount">当日涨跌额</option>
-          <option value="daily_change_percent">当日涨跌幅</option>
-          <option value="holding_amount">持仓金额</option>
-        </select>
-        <span className="fund-sort-label">排序方式</span>
-        <select
-          className="fund-sort-select"
-          value={sortOrder}
-          onChange={(event) =>
-            onSortOrderChange(event.target.value as "none" | "asc" | "desc")
-          }
-        >
-          <option value="none">不排序</option>
-          <option value="asc">升序</option>
-          <option value="desc">降序</option>
-        </select>
-      </div>
-
-      <div className="funds-list-wrap">
-        <div className="funds-list">
-          {sortedFunds.map((fund) => (
-          <ListDetail
-            key={fund.code}
-            fund={fund}
-            selected={selectedFundCode === fund.code}
-            onSelect={onSelectFund}
-            onRemove={handleRemoveFund}
-            sortKey={sortKey}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                handleAddFund();
+              }
+            }}
+            placeholder="输入基金代码"
+            maxLength={6}
+            className="input"
           />
-        ))}
+          <button onClick={handleAddFund} className="button primary small">
+            添加
+          </button>
+        </div>
       </div>
+
+      <div className="fund-table">
+        <div className="fund-head">
+          <span>基金</span>
+          <span className="metric-head">{sortLabel}</span>
+          <span style={{ textAlign: "right" }}>操作</span>
+        </div>
+        <div className="fund-body">
+          {sortedFunds.map((fund) => (
+            <ListDetail
+              key={fund.code}
+              fund={fund}
+              selected={selectedFundCode === fund.code}
+              onSelect={onSelectFund}
+              onRemove={handleRemoveFund}
+              metricKey={sortKey}
+            />
+          ))}
+        </div>
       </div>
-      <div className="funds-summary">
+
+      <div className="fund-summary">
         <span>当日涨跌金额汇总</span>
         <strong
           className={`fund-change ${getChangeClassFromNumber(
@@ -297,6 +315,60 @@ export const ListDetailView: React.FC<ListDetailViewProps> = ({
     </div>
   );
 };
+
+function renderSortButton(
+  field: "holding_amount" | "daily_change_percent" | "daily_change_amount",
+  label: string,
+  currentKey: "holding_amount" | "daily_change_percent" | "daily_change_amount",
+  currentOrder: "none" | "asc" | "desc",
+  onSortKeyChange: (
+    key: "holding_amount" | "daily_change_percent" | "daily_change_amount"
+  ) => void,
+  onSortOrderChange: (order: "none" | "asc" | "desc") => void
+) {
+  const isActive = currentKey === field && currentOrder !== "none";
+  const orderLabel =
+    currentKey !== field || currentOrder === "none"
+      ? "未排序"
+      : currentOrder === "desc"
+        ? "降序"
+        : "升序";
+
+  const handleClick = () => {
+    if (currentKey !== field) {
+      onSortKeyChange(field);
+      onSortOrderChange("desc");
+      return;
+    }
+    if (currentOrder === "desc") {
+      onSortOrderChange("asc");
+      return;
+    }
+    if (currentOrder === "asc") {
+      onSortOrderChange("none");
+      return;
+    }
+    onSortOrderChange("desc");
+  };
+
+  return (
+    <button
+      type="button"
+      className={`sort-btn ${isActive ? "active" : ""}`}
+      onClick={handleClick}
+    >
+      {label} <span className="sort-icon">{orderLabel}</span>
+    </button>
+  );
+}
+
+function getSortLabel(
+  key: "holding_amount" | "daily_change_percent" | "daily_change_amount"
+) {
+  if (key === "holding_amount") return "持仓金额";
+  if (key === "daily_change_amount") return "当日涨跌额";
+  return "当日涨跌幅";
+}
 
 function parseChangePercent(value: string | null) {
   if (!value) return null;

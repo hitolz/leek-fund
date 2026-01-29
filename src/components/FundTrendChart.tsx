@@ -12,8 +12,8 @@ const PADDING_LEFT = 44;
 const PADDING_RIGHT = 10;
 const PADDING_TOP = 10;
 const PADDING_BOTTOM = 34;
-const TICK_COUNT = 4;
-const X_TICK_COUNT = 6;
+const TICK_COUNT: number = 4;
+const X_TICK_COUNT: number = 6;
 
 export const FundTrendChart: React.FC<FundTrendChartProps> = ({
   trend,

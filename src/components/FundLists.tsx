@@ -19,7 +19,7 @@ export const FundLists: React.FC<FundListsProps> = ({
 }) => {
   const [newListName, setNewListName] = useState("");
   const [creating, setCreating] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [editingName, setEditingName] = useState("");
   const { createList, renameList, deleteList } = useTauriCommands();
 
@@ -42,7 +42,7 @@ export const FundLists: React.FC<FundListsProps> = ({
     }
   };
 
-  const handleRename = async (id: string) => {
+  const handleRename = async (id: number) => {
     if (!editingName.trim()) {
       showToast?.("列表名称不能为空", "error");
       return;
@@ -58,7 +58,7 @@ export const FundLists: React.FC<FundListsProps> = ({
     }
   };
 
-  const handleDelete = async (id: string, name: string, fundCount: number) => {
+  const handleDelete = async (id: number, name: string, fundCount: number) => {
     const confirmMessage =
       fundCount > 0
         ? `确定删除列表"${name}"吗？将移除${fundCount}只基金。`

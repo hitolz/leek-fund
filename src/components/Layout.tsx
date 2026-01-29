@@ -28,12 +28,13 @@ export const Layout: React.FC<{
 
   return (
     <div className="app-layout">
-      <header className="app-header">
-        <div className="app-header-content">
-          <h1>📈 基金查询客户端</h1>
-          {headerRight && <div className="app-header-right">{headerRight}</div>}
-        </div>
-      </header>
+      {headerRight && (
+        <header className="app-header">
+          <div className="app-header-content">
+            <div className="app-header-right">{headerRight}</div>
+          </div>
+        </header>
+      )}
 
       <ToastContext.Provider value={showToast}>
         <main className="app-main app-main-three-column">{children}</main>
