@@ -14,6 +14,7 @@ interface ListDetailProps {
   onSelect: (code: string) => void;
   onRemove: (code: string) => void;
   metricKey: "holding_amount" | "daily_change_percent" | "daily_change_amount";
+  rowRef?: (node: HTMLDivElement | null) => void;
 }
 
 export const ListDetail: React.FC<ListDetailProps> = ({
@@ -22,6 +23,7 @@ export const ListDetail: React.FC<ListDetailProps> = ({
   onSelect,
   onRemove,
   metricKey,
+  rowRef,
 }) => {
   const changePercentClass = getChangeClass(fund.daily_change_percent);
   const changeAmountClass = getChangeClassFromNumber(
@@ -50,6 +52,7 @@ export const ListDetail: React.FC<ListDetailProps> = ({
   return (
     <div
       className={`fund-row ${selected ? "active" : ""}`}
+      ref={rowRef}
       onClick={() => onSelect(fund.code)}
       role="button"
       tabIndex={0}

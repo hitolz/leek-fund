@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { FundSummary } from "../types";
 import { useTauriCommands } from "../hooks/useTauriCommands";
 import { ListDetail } from "./ListDetail";
@@ -42,6 +42,7 @@ export const ListDetailView: React.FC<ListDetailViewProps> = ({
   const [funds, setFunds] = useState<FundSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [newFundCode, setNewFundCode] = useState("");
+  const rowRefs = useRef(new Map<string, HTMLDivElement | null>());
   const {
     getListFundSummaries,
     addFundToList,
@@ -100,6 +101,10 @@ export const ListDetailView: React.FC<ListDetailViewProps> = ({
     if (isFundInList(funds, code)) {
       onSelectFund(code);
       showToast?.("基金已在列表中", "success");
+      requestAnimationFrame(() => {
+        const node = rowRefs.current.get(code);
+        node?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
       return;
     }
 
@@ -219,6 +224,10 @@ export const ListDetailView: React.FC<ListDetailViewProps> = ({
   }
 
   const sortLabel = getSortLabel(sortKey);
+  const registerRowRef =
+    (code: string) => (node: HTMLDivElement | null) => {
+      rowRefs.current.set(code, node);
+    };
 
   return (
     <div className="list-detail-view">
@@ -297,6 +306,7 @@ export const ListDetailView: React.FC<ListDetailViewProps> = ({
               onSelect={onSelectFund}
               onRemove={handleRemoveFund}
               metricKey={sortKey}
+              rowRef={registerRowRef(fund.code)}
             />
           ))}
         </div>
