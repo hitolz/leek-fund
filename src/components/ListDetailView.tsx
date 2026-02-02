@@ -49,6 +49,26 @@ export const ListDetailView: React.FC<ListDetailViewProps> = ({
     removeFundFromList,
     syncFundPingzhong,
   } = useTauriCommands();
+  const syncFundSnapshots = async (codes: string[]) => {
+    if (codes.length === 0) return;
+    const limit = 2;
+    let index = 0;
+    const workers = Array.from(
+      { length: Math.min(limit, codes.length) },
+      async () => {
+        while (index < codes.length) {
+          const code = codes[index];
+          index += 1;
+          try {
+            await syncFundPingzhong(code);
+          } catch {
+            // ignore background sync errors
+          }
+        }
+      }
+    );
+    await Promise.allSettled(workers);
+  };
 
   useEffect(() => {
     if (listId !== null) {
@@ -76,9 +96,7 @@ export const ListDetailView: React.FC<ListDetailViewProps> = ({
       const fundList = await getListFundSummaries(listId);
       setFunds(fundList);
       if (silent && fundList.length > 0) {
-        void Promise.allSettled(
-          fundList.map((fund) => syncFundPingzhong(fund.code))
-        );
+        void syncFundSnapshots(fundList.map((fund) => fund.code));
       }
     } catch (error) {
       if (!silent && showToast) {

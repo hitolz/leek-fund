@@ -69,6 +69,8 @@ pub async fn save_pingzhong_payload(
     }
 
     let fetched_at = Utc::now().timestamp_millis();
+    let day_start = (fetched_at / 86_400_000) * 86_400_000;
+    let day_end = day_start + 86_400_000;
     let vars = extract_all_vars(payload);
     let mut var_map = HashMap::new();
     for var in &vars {
@@ -79,6 +81,28 @@ pub async fn save_pingzhong_payload(
         .begin()
         .await
         .map_err(|e| AppError::StorageError(format!("数据库写入失败: {}", e)))?;
+
+    sqlx::query(
+        "DELETE FROM fund_pingzhong_kv \
+         WHERE fund_code = ? AND fetched_at >= ? AND fetched_at < ?",
+    )
+    .bind(fund_code)
+    .bind(day_start)
+    .bind(day_end)
+    .execute(&mut *tx)
+    .await
+    .map_err(|e| AppError::StorageError(format!("数据库写入失败: {}", e)))?;
+
+    sqlx::query(
+        "DELETE FROM fund_pingzhong_raw \
+         WHERE fund_code = ? AND fetched_at >= ? AND fetched_at < ?",
+    )
+    .bind(fund_code)
+    .bind(day_start)
+    .bind(day_end)
+    .execute(&mut *tx)
+    .await
+    .map_err(|e| AppError::StorageError(format!("数据库写入失败: {}", e)))?;
 
     sqlx::query(
         "INSERT INTO fund_pingzhong_raw (fund_code, fetched_at, payload) VALUES (?, ?, ?)",

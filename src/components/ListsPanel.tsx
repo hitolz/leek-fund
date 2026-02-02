@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { FundList } from "../types";
 import { useTauriCommands } from "../hooks/useTauriCommands";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 interface ListsPanelProps {
   lists: FundList[];
@@ -21,6 +22,13 @@ export const ListsPanel: React.FC<ListsPanelProps> = ({
   const [creating, setCreating] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingName, setEditingName] = useState("");
+  const [pendingDelete, setPendingDelete] = useState<{
+    id: number;
+    name: string;
+    fundCount: number;
+    step: 1 | 2;
+  } | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const { createList, renameList, deleteList } = useTauriCommands();
 
   const handleCreateList = async () => {
@@ -70,30 +78,45 @@ export const ListsPanel: React.FC<ListsPanelProps> = ({
     }
   };
 
-  const handleDelete = async (id: number, name: string, fundCount: number) => {
-    const confirmMessage =
-      fundCount > 0
-        ? `确定删除列表"${name}"吗？将移除${fundCount}只基金。`
-        : `确定删除列表"${name}"吗？`;
+  const handleDelete = (id: number, name: string, fundCount: number) => {
+    setPendingDelete({ id, name, fundCount, step: 1 });
+  };
 
-    if (!confirm(confirmMessage)) {
+  const handleDeleteConfirm = async () => {
+    if (!pendingDelete || deleting) {
       return;
     }
 
+    if (pendingDelete.step === 1) {
+      setPendingDelete({ ...pendingDelete, step: 2 });
+      return;
+    }
+
+    setDeleting(true);
     try {
-      await deleteList(id);
+      await deleteList(pendingDelete.id);
       if (showToast) {
         showToast("列表已删除", "success");
       }
-      if (selectedListId === id) {
+      if (selectedListId === pendingDelete.id) {
         onSelectList(null);
       }
       onListsChange();
+      setPendingDelete(null);
     } catch (error) {
       if (showToast) {
         showToast(String(error), "error");
       }
+    } finally {
+      setDeleting(false);
     }
+  };
+
+  const handleDeleteCancel = () => {
+    if (deleting) {
+      return;
+    }
+    setPendingDelete(null);
   };
 
   return (
@@ -208,6 +231,28 @@ export const ListsPanel: React.FC<ListsPanelProps> = ({
           ))
         )}
       </div>
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title={pendingDelete?.step === 2 ? "最后确认" : "删除列表"}
+        message={
+          pendingDelete
+            ? pendingDelete.step === 2
+              ? pendingDelete.fundCount > 0
+                ? `请再次确认删除列表"${pendingDelete.name}"，${pendingDelete.fundCount}只基金将被移除且无法恢复。`
+                : `请再次确认删除列表"${pendingDelete.name}"，删除后无法恢复。`
+              : pendingDelete.fundCount > 0
+                ? `确定删除列表"${pendingDelete.name}"吗？将移除${pendingDelete.fundCount}只基金。`
+                : `确定删除列表"${pendingDelete.name}"吗？`
+            : ""
+        }
+        confirmText={pendingDelete?.step === 2 ? "确认删除" : "继续"}
+        cancelText="取消"
+        tone="danger"
+        confirmDisabled={deleting}
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+      />
     </div>
   );
 };

@@ -55,22 +55,50 @@ pub async fn set_group_fund_position(
     }
 
     let now = Utc::now().timestamp();
-    sqlx::query(
-        "INSERT INTO group_fund_positions \
-        (group_id, fund_code, holding_amount, holding_shares, created_at, updated_at) \
-        VALUES (?, ?, ?, ?, ?, ?) \
-        ON CONFLICT(group_id, fund_code) DO UPDATE SET \
-        holding_amount = excluded.holding_amount, holding_shares = excluded.holding_shares, updated_at = excluded.updated_at",
-    )
-    .bind(list_id)
-    .bind(fund_code)
-    .bind(holding_amount)
-    .bind(holding_shares)
-    .bind(now)
-    .bind(now)
-    .execute(pool)
-    .await
-    .map_err(|e| AppError::StorageError(format!("数据库写入失败: {}", e)))?;
+    if has_legacy_shares_column(pool).await? {
+        let unit_price = if holding_shares > 0.0 {
+            Some(holding_amount / holding_shares)
+        } else {
+            None
+        };
+        sqlx::query(
+            "INSERT INTO group_fund_positions \
+            (group_id, fund_code, shares, unit_price, holding_amount, holding_shares, created_at, updated_at) \
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?) \
+            ON CONFLICT(group_id, fund_code) DO UPDATE SET \
+            shares = excluded.shares, unit_price = excluded.unit_price, \
+            holding_amount = excluded.holding_amount, holding_shares = excluded.holding_shares, \
+            updated_at = excluded.updated_at",
+        )
+        .bind(list_id)
+        .bind(fund_code)
+        .bind(holding_shares)
+        .bind(unit_price)
+        .bind(holding_amount)
+        .bind(holding_shares)
+        .bind(now)
+        .bind(now)
+        .execute(pool)
+        .await
+        .map_err(|e| AppError::StorageError(format!("数据库写入失败: {}", e)))?;
+    } else {
+        sqlx::query(
+            "INSERT INTO group_fund_positions \
+            (group_id, fund_code, holding_amount, holding_shares, created_at, updated_at) \
+            VALUES (?, ?, ?, ?, ?, ?) \
+            ON CONFLICT(group_id, fund_code) DO UPDATE SET \
+            holding_amount = excluded.holding_amount, holding_shares = excluded.holding_shares, updated_at = excluded.updated_at",
+        )
+        .bind(list_id)
+        .bind(fund_code)
+        .bind(holding_amount)
+        .bind(holding_shares)
+        .bind(now)
+        .bind(now)
+        .execute(pool)
+        .await
+        .map_err(|e| AppError::StorageError(format!("数据库写入失败: {}", e)))?;
+    }
 
     Ok(GroupFundPosition {
         list_id,
@@ -116,4 +144,15 @@ async fn ensure_list_exists(pool: &SqlitePool, list_id: i64) -> AppResult<()> {
         return Err(AppError::ListNotFound(list_id.to_string()));
     }
     Ok(())
+}
+
+async fn has_legacy_shares_column(pool: &SqlitePool) -> AppResult<bool> {
+    let columns: Vec<String> = sqlx::query("PRAGMA table_info('group_fund_positions')")
+        .fetch_all(pool)
+        .await
+        .map_err(|e| AppError::StorageError(format!("数据库读取失败: {}", e)))?
+        .into_iter()
+        .filter_map(|row| row.try_get::<String, _>("name").ok())
+        .collect();
+    Ok(columns.iter().any(|name| name == "shares"))
 }
