@@ -2,6 +2,7 @@ import React from "react";
 import { FundDetail, FundTrend, Holding } from "../types";
 import { FundTrendChart } from "./FundTrendChart";
 import { HoldingForm } from "./HoldingForm";
+import { formatChangePercent, getChangeClass } from "../utils/formatters";
 
 interface FundDetailPanelProps {
   detail: FundDetail | null;
@@ -61,6 +62,9 @@ export const FundDetailPanel: React.FC<FundDetailPanelProps> = ({
     );
   }
 
+  const changeClass = getChangeClass(detail.change_percent);
+  const changePercentLabel = formatChangePercent(detail.change_percent);
+
   return (
     <div className="fund-detail-panel">
       <div className="detail-hero">
@@ -82,8 +86,8 @@ export const FundDetailPanel: React.FC<FundDetailPanelProps> = ({
         </div>
         <div className="metric-card">
           <div className="metric-label">当日涨跌幅</div>
-          <div className="metric-value">
-            {detail.change_percent ? `${detail.change_percent}%` : "--"}
+          <div className={`metric-value fund-change ${changeClass}`}>
+            {changePercentLabel}
           </div>
         </div>
         <div className="metric-card">
