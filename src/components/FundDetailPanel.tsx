@@ -7,7 +7,6 @@ import { formatChangePercent, getChangeClass } from "../utils/formatters";
 interface FundDetailPanelProps {
   detail: FundDetail | null;
   trend: FundTrend | null;
-  accumTrend: FundTrend | null;
   loading: boolean;
   error: string | null;
   holding: Holding | null;
@@ -20,7 +19,6 @@ interface FundDetailPanelProps {
 export const FundDetailPanel: React.FC<FundDetailPanelProps> = ({
   detail,
   trend,
-  accumTrend,
   loading,
   error,
   holding,
@@ -116,12 +114,6 @@ export const FundDetailPanel: React.FC<FundDetailPanelProps> = ({
           trend={trend}
           title="单位净值走势"
           valueFormatter={(value) => value.toFixed(4)}
-        />
-        <FundTrendChart
-          trend={accumTrend}
-          title="累计收益率走势"
-          stroke="#fa8c16"
-          valueFormatter={(value) => `${value.toFixed(2)}%`}
         />
       </div>
     </div>

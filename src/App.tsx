@@ -24,7 +24,6 @@ function App({ globalRefreshMs }: AppProps) {
   const [listsError, setListsError] = useState<string | null>(null);
   const [fundDetail, setFundDetail] = useState<FundDetail | null>(null);
   const [fundTrend, setFundTrend] = useState<FundTrend | null>(null);
-  const [fundAccumTrend, setFundAccumTrend] = useState<FundTrend | null>(null);
   const [fundDetailLoading, setFundDetailLoading] = useState(false);
   const [fundDetailError, setFundDetailError] = useState<string | null>(null);
   const [holding, setHolding] = useState<Holding | null>(null);
@@ -39,7 +38,6 @@ function App({ globalRefreshMs }: AppProps) {
     getAllLists,
     getFundDetail,
     getFundTrend,
-    getFundAccumTrend,
     getStorageWarning,
     getHolding,
     setHolding: saveHolding,
@@ -61,6 +59,10 @@ function App({ globalRefreshMs }: AppProps) {
     try {
       const allLists = await getAllLists();
       setLists(allLists);
+      setSelectedListId((prev) => {
+        if (prev !== null) return prev;
+        return allLists[0]?.id ?? null;
+      });
       setListsError(null);
     } catch (error) {
       console.error("Failed to load lists:", error);
@@ -99,7 +101,6 @@ function App({ globalRefreshMs }: AppProps) {
     setSelectedFundCode(null);
     setFundDetail(null);
     setFundTrend(null);
-    setFundAccumTrend(null);
     setFundDetailError(null);
     setHolding(null);
     setHoldingError(null);
@@ -109,7 +110,6 @@ function App({ globalRefreshMs }: AppProps) {
     if (!selectedFundCode) {
       setFundDetail(null);
       setFundTrend(null);
-      setFundAccumTrend(null);
       setFundDetailError(null);
       setHolding(null);
       setHoldingError(null);
@@ -171,18 +171,8 @@ function App({ globalRefreshMs }: AppProps) {
       }
     };
 
-    const loadAccumTrend = async () => {
-      try {
-        const trend = await getFundAccumTrend(selectedFundCode);
-        setFundAccumTrend(trend);
-      } catch (error) {
-        setFundAccumTrend(null);
-      }
-    };
-
     loadDetail(false);
     loadTrend();
-    loadAccumTrend();
 
     const timer = setInterval(() => {
       loadDetail(true);
@@ -194,7 +184,6 @@ function App({ globalRefreshMs }: AppProps) {
     selectedListId,
     getFundDetail,
     getFundTrend,
-    getFundAccumTrend,
     globalRefreshMs,
   ]);
 
@@ -338,7 +327,6 @@ function App({ globalRefreshMs }: AppProps) {
             <FundDetailPanel
               detail={fundDetail}
               trend={fundTrend}
-              accumTrend={fundAccumTrend}
               loading={fundDetailLoading}
               error={fundDetailError}
               holding={holding}

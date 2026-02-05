@@ -80,6 +80,19 @@ export const ListDetailView: React.FC<ListDetailViewProps> = ({
 
   useEffect(() => {
     if (listId === null) return;
+    if (funds.length === 0) {
+      if (selectedFundCode) {
+        onSelectFund("");
+      }
+      return;
+    }
+    if (!selectedFundCode || !isFundInList(funds, selectedFundCode)) {
+      onSelectFund(funds[0].code);
+    }
+  }, [listId, funds, selectedFundCode, onSelectFund]);
+
+  useEffect(() => {
+    if (listId === null) return;
     const timer = setInterval(() => {
       loadFunds(true);
     }, refreshIntervalMs);
