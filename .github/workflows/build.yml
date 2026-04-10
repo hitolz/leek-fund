@@ -70,9 +70,21 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           args: ${{ matrix.args }}
+          tagName: ${{ github.ref_name }}
+
+      - name: Set artifact path
+        id: artifact
+        run: |
+          if [ "${{ matrix.platform }}" = "macos-14" ]; then
+            echo "path=src-tauri/target/aarch64-apple-darwin/release/bundle" >> $GITHUB_OUTPUT
+          elif [ "${{ matrix.platform }}" = "macos-latest" ]; then
+            echo "path=src-tauri/target/x86_64-apple-darwin/release/bundle" >> $GITHUB_OUTPUT
+          else
+            echo "path=src-tauri/target/release/bundle" >> $GITHUB_OUTPUT
+          fi
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: bundles-${{ matrix.platform }}-${{ matrix.target }}
-          path: src-tauri/target/release/bundle/**
+          path: ${{ steps.artifact.outputs.path }}/**
