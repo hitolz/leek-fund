@@ -26,7 +26,7 @@ jobs:
             target: "x86_64-unknown-linux-gnu"
             deps: |
               libwebkit2gtk-4.1-dev
-              libappindicator3-dev
+              libayatana-appindicator3-dev
               librsvg2-dev
               patchelf
               libxdo-dev
