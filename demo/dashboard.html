@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leek Fund - 基金查询客户端</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--primary:#4F46E5;--success:#10B981;--danger:#EF4444;--bg-primary:#0a1628;--bg-card:#12264d;--text:#F8FAFC;--text-muted:#64748B;--border:rgba(73,96,163,0.3);--radius:12px}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Noto Sans SC',sans-serif;background:linear-gradient(180deg,#0a1628,#07101f);color:var(--text);min-height:100vh;font-size:14px}
+    .app-shell{padding:20px;max-width:1600px;margin:0 auto;height:100vh;display:flex;flex-direction:column;gap:16px}
+    .topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:linear-gradient(135deg,rgba(34,61,120,0.55),rgba(19,33,72,0.65));border:1px solid rgba(120,156,255,0.2);border-radius:var(--radius)}
+    .logo{font-size:18px;font-weight:700;background:linear-gradient(135deg,#6af5b1,#7ac4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .topbar-tabs{display:flex;gap:4px}
+    .tab-btn{padding:8px 16px;border-radius:8px;font-size:13px;cursor:pointer;border:none;background:transparent;color:var(--text-muted)}
+    .tab-btn.active{background:linear-gradient(135deg,rgba(106,167,255,0.25),rgba(90,229,177,0.22));color:var(--text)}
+    .meta-pill{font-size:12px;color:var(--text-muted);padding:6px 10px;border-radius:999px;border:1px dashed rgba(154,166,209,0.35)}
+    .meta-pill.ghost{color:var(--text);border-style:solid;border-color:rgba(123,255,177,0.4)}
+    .layout{display:grid;grid-template-columns:260px 1fr 1fr;gap:14px;flex:1;min-height:0}
+    .panel{background:linear-gradient(180deg,rgba(20,34,72,0.94),rgba(13,23,50,0.98));border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;min-height:0;overflow:hidden}
+    .panel-header{padding:14px 16px;border-bottom:1px solid var(--border);background:rgba(13,23,54,0.7)}
+    .panel-title{font-weight:700;font-size:15px}
+    .panel-subtitle{font-size:12px;color:var(--text-muted);margin-top:4px}
+    .panel-body{padding:12px;overflow:auto;flex:1}
+    .panel-footer{padding:10px 12px;border-top:1px solid var(--border);background:rgba(13,23,54,0.7)}
+    .button{border:1px solid rgba(120,156,255,0.3);background:rgba(28,47,94,0.65);color:var(--text);padding:7px 12px;border-radius:10px;cursor:pointer;font-size:13px}
+    .button.primary{background:linear-gradient(135deg,rgba(106,167,255,0.25),rgba(90,229,177,0.22));border-color:rgba(123,255,177,0.45)}
+    .button.danger{background:rgba(255,107,107,0.25);border-color:rgba(255,107,107,0.55);color:#ffecec}
+    .button.small{padding:6px 10px;font-size:12px}
+    .input{border:1px solid rgba(120,156,255,0.3);background:rgba(16,26,58,0.8);color:var(--text);padding:8px 12px;border-radius:8px;font-size:13px;outline:none}
+    .input:focus{border-color:rgba(106,167,255,0.7)}
+    .input::placeholder{color:var(--text-muted)}
+    .lists-panel{display:flex;flex-direction:column;gap:10px;height:100%}
+    .list-create{display:flex;gap:8px}
+    .list-create .input{flex:1}
+    .lists-container{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:4px}
+    .list-item{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:8px;cursor:pointer;background:transparent;border:none;width:100%;text-align:left;color:var(--text)}
+    .list-item:hover{background:rgba(106,167,255,0.1)}
+    .list-item.active{background:linear-gradient(135deg,rgba(106,167,255,0.2),rgba(90,229,177,0.15));border:1px solid rgba(123,255,177,0.3)}
+    .list-info{display:flex;flex-direction:column}
+    .list-name{font-weight:500;font-size:13px}
+    .list-meta{font-size:11px;color:var(--text-muted)}
+    .list-actions{display:flex;gap:4px;opacity:0}
+    .list-item:hover .list-actions{opacity:1}
+    .icon-btn{background:transparent;border:none;cursor:pointer;padding:4px;font-size:12px;opacity:0.7}
+    .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center;color:var(--text-muted)}
+    .toolbar{padding:10px 12px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid var(--border)}
+    .toolbar-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .toolbar-label{font-size:12px;color:var(--text-muted)}
+    .add-form{display:flex;gap:8px;align-items:center}
+    .add-form .input{width:120px}
+    .sort-btn{padding:4px 10px;border-radius:6px;font-size:12px;cursor:pointer;background:rgba(28,47,94,0.65);border:1px solid rgba(120,156,255,0.2);color:var(--text-muted)}
+    .sort-btn.active{background:rgba(106,167,255,0.2);border-color:rgba(123,255,177,0.4);color:var(--text)}
+    .sort-icon{margin-left:4px;font-size:10px}
+    .fund-table{flex:1;display:flex;flex-direction:column;overflow:hidden}
+    .fund-head{display:grid;grid-template-columns:1fr 100px 80px;padding:8px 12px;font-size:12px;color:var(--text-muted);border-bottom:1px solid var(--border)}
+    .fund-body{flex:1;overflow-y:auto}
+    .fund-row{display:grid;grid-template-columns:1fr 100px 80px;align-items:center;padding:12px;border-bottom:1px solid rgba(73,96,163,0.15);cursor:pointer}
+    .fund-row:hover{background:rgba(106,167,255,0.08)}
+    .fund-row.selected{background:linear-gradient(135deg,rgba(106,167,255,0.15),rgba(90,229,177,0.1));border-left:3px solid var(--success)}
+    .fund-info{display:flex;flex-direction:column}
+    .fund-code{font-weight:600;color:var(--primary);font-size:13px}
+    .fund-name{font-size:12px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .fund-metric{text-align:right;font-weight:600}
+    .fund-change{text-align:right;font-weight:600;padding:3px 8px;border-radius:4px;font-size:12px}
+    .fund-change.positive{background:rgba(16,185,129,0.15);color:#10B981}
+    .fund-change.negative{background:rgba(239,68,68,0.15);color:#EF4444}
+    .fund-summary{padding:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+    .detail-hero{padding:16px;border-bottom:1px solid var(--border)}
+    .detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:16px}
+    .metric-card{background:rgba(16,26,58,0.6);padding:12px;border-radius:8px;text-align:center}
+    .metric-label{font-size:12px;color:var(--text-muted);margin-bottom:4px}
+    .metric-value{font-size:18px;font-weight:700}
+    .holding-section{padding:16px;border-top:1px solid var(--border)}
+    .holding-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+    .holding-header h4{font-size:14px;font-weight:600}
+    .holding-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+    .holding-fields label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--text-muted)}
+    .holding-fields input{padding:8px;font-size:13px}
+    .holding-readonly{padding:8px;background:rgba(16,26,58,0.8);border-radius:8px;font-size:13px}
+    .holding-actions{display:flex;gap:8px;margin-bottom:12px}
+    .holding-actions button{flex:1}
+    .holding-summary{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding-top:12px;border-top:1px solid var(--border)}
+    .holding-summary div{display:flex;flex-direction:column}
+    .holding-summary span{font-size:12px;color:var(--text-muted)}
+    .fund-trend-stack{flex:1;padding:16px;min-height:200px;display:flex;flex-direction:column}
+    .trend-title{font-size:14px;font-weight:600;margin-bottom:12px}
+    .chart-container{flex:1;background:rgba(16,26,58,0.6);border-radius:8px;display:flex;align-items:center;justify-content:center;position:relative}
+    .chart-svg{position:absolute;bottom:20px;left:10px;right:10px;height:100px}
+    .chat-container{display:flex;flex-direction:column;height:100%}
+    .chat-messages{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:12px}
+    .chat-message{max-width:85%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.5}
+    .chat-message.user{align-self:flex-end;background:linear-gradient(135deg,rgba(106,167,255,0.3),rgba(90,229,177,0.2));border:1px solid rgba(123,255,177,0.3)}
+    .chat-message.assistant{align-self:flex-start;background:rgba(28,47,94,0.65);border:1px solid rgba(120,156,255,0.2)}
+    .chat-message .message-time{font-size:10px;color:var(--text-muted);margin-top:4px}
+    .chat-input-container{padding:12px;border-top:1px solid var(--border);display:flex;gap:8px}
+    .chat-input-container .input{flex:1}
+    .toast-container{position:fixed;top:20px;right:20px;z-index:1000;display:flex;flex-direction:column;gap:8px}
+    .toast{padding:12px 16px;border-radius:8px;font-size:13px;animation:slideIn 0.3s}
+    .toast.success{background:rgba(16,185,129,0.15);color:#10B981;border:1px solid #10B981}
+    .toast.error{background:rgba(239,68,68,0.15);color:#EF4444;border:1px solid #EF4444}
+    @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+    ::-webkit-scrollbar{width:6px}
+    ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+  </style>
+</head>
+<body>
+<div class="app-shell">
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="logo">📈 Leek Fund</span>
+      <div class="topbar-tabs">
+        <button class="tab-btn active" data-tab="funds">基金列表</button>
+        <button class="tab-btn" data-tab="ai">AI 对话</button>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span class="meta-pill">🔄 自动刷新中</span>
+      <span class="meta-pill ghost">🕐 更新时间: <span id="updateTime">16:00</span></span>
+    </div>
+  </div>
+  <div class="layout">
+    <!-- 左侧: 列表管理 -->
+    <div class="panel">
+      <div class="panel-header"><div class="panel-title">📁 我的列表</div></div>
+      <div class="panel-body">
+        <div class="lists-panel">
+          <div class="list-create">
+            <input type="text" class="input" id="newListName" placeholder="新建列表" maxlength="64">
+            <button class="button primary small" id="createListBtn">创建</button>
+          </div>
+          <div class="lists-container" id="listsContainer"></div>
+        </div>
+      </div>
+    </div>
+    <!-- 中间: 基金列表 -->
+    <div class="panel">
+      <div class="panel-header">
+        <div><div class="panel-title" id="listTitle">请选择一个列表</div><div class="panel-subtitle" id="listSubtitle">从左侧选择列表后查看基金详情</div></div>
+      </div>
+      <div class="toolbar" id="fundsToolbar" style="display:none">
+        <div class="toolbar-group"><span class="toolbar-label">排序:</span>
+          <button class="sort-btn active" data-sort="daily_change_percent">涨跌幅 <span class="sort-icon">降序</span></button>
+          <button class="sort-btn" data-sort="daily_change_amount">涨跌额 <span class="sort-icon">未排序</span></button>
+          <button class="sort-btn" data-sort="holding_amount">持仓金额 <span class="sort-icon">未排序</span></button>
+        </div>
+        <div class="toolbar-group add-form"><span class="toolbar-label">添加:</span>
+          <input type="text" class="input" id="addFundInput" placeholder="基金代码" maxlength="6">
+          <button class="button primary small" id="addFundBtn">添加</button>
+        </div>
+      </div>
+      <div class="fund-table" id="fundTable" style="display:none">
+        <div class="fund-head"><span>基金</span><span id="sortLabel">涨跌幅</span><span style="text-align:right">操作</span></div>
+        <div class="fund-body" id="fundBody"></div>
+      </div>
+      <div class="panel-footer" id="fundsFooter" style="display:none">
+        <div class="fund-summary"><span>当日涨跌金额汇总</span><strong class="fund-change positive" id="dailyChangeTotal">+0.00</strong></div>
+      </div>
+      <div class="empty-state" id="fundsEmpty"><div class="panel-title">请选择一个列表</div><div class="panel-subtitle">从左侧选择列表后查看基金详情</div></div>
+    </div>
+    <!-- 右侧: 基金详情 -->
+    <div class="panel" id="panel-detail"><div id="detailContent"><div class="empty-state" style="height:100%"><div class="panel-title">请选择基金</div><div class="panel-subtitle">选择基金后查看详情与走势</div></div></div></div>
+    <!-- AI对话 -->
+    <div class="panel" id="panel-chat" style="display:none;grid-column:2/4">
+      <div class="chat-container">
+        <div class="panel-header"><div class="panel-title">🤖 AI 助手</div></div>
+        <div class="chat-messages" id="chatMessages">
+          <div class="chat-message assistant">你好！我是你的基金助手，可以帮你分析基金、解答问题。<div class="message-time">16:00</div></div>
+        </div>
+        <div class="chat-input-container">
+          <input type="text" class="input" id="chatInput" placeholder="输入你想问的问题...">
+          <button class="button primary" id="chatSendBtn">发送</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast-container" id="toastContainer"></div>
+<script>
+const store={lists:[{id:1,name:'我的自选',fund_codes:['001552','161039','005918']},{id:2,name:'银行板块',fund_codes:['161721','001848']},{id:3,name:'科技成长',fund_codes:['001878']}],funds:{'001552':{code:'001552',name:'天弘中证银行指数A',net_value:1.2345,change_percent:'+2.35',daily_change_amount:0.0282,holding_amount:45230,holding_shares:36643.22,update_time:'2026-03-11 15:00'},'161039':{code:'161039',name:'富国中证1000指数增强',net_value:2.1567,change_percent:'+1.89',daily_change_amount:0.0401,holding_amount:32150,holding_shares:14903.45,update_time:'2026-03-11 15:00'},'005918':{code:'005918',name:'广发双擎升级混合A',net_value:3.4567,change_percent:'-0.65',daily_change_amount:-0.0227,holding_amount:28760,holding_shares:8319.12,update_time:'2026-03-11 15:00'},'001878':{code:'001878',name:'嘉实沪港深精选股票',net_value:2.1234,change_percent:'+3.12',daily_change_amount:0.0642,holding_amount:15200,holding_shares:7158.32,update_time:'2026-03-11 15:00'},'161721':{code:'161721',name:'招商中证银行指数',net_value:1.5678,change_percent:'+4.92',daily_change_amount:0.0735,holding_amount:null,holding_shares:null,update_time:'2026-03-11 15:00'},'001848':{code:'001848',name:'鹏华银行指数A',net_value:1.2345,change_percent:'+3.45',daily_change_amount:0.0411,holding_amount:null,holding_shares:null,update_time:'2026-03-11 15:00'}},selectedListId:null,selectedFundCode:null,sortKey:'daily_change_percent',sortOrder:'desc'};
+function showToast(m,t='success'){const c=document.getElementById('toastContainer');const x=document.createElement('div');x.className='toast '+t;x.textContent=m;c.appendChild(x);setTimeout(()=>x.remove(),3000)}
+function fmt(v){if(v==null)return'--';return'¥'+v.toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function fmtS(v){if(v==null)return'--';const s=v>=0?'+':'';return s+'¥'+v.toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function renderLists(){const c=document.getElementById('listsContainer');if(store.lists.length===0){c.innerHTML='<div class="empty-state"><p>还没有列表，创建一个吧</p></div>';return}c.innerHTML=store.lists.map(l=>'<button class="list-item '+(store.selectedListId===l.id?'active':'')+'" data-list-id="'+l.id+'"><div class="list-info"><span class="list-name">'+l.name+'</span><span class="list-meta">'+l.fund_codes.length+' 只基金</span></div><div class="list-actions"><button class="icon-btn" data-action="rename" data-id="'+l.id+'" title="重命名">✏️</button><button class="icon-btn" data-action="delete" data-id="'+l.id+'" title="删除">🗑️</button></div></button>').join('')}
+function handleCreateList(){const i=document.getElementById('newListName');const n=i.value.trim();if(!n){showToast('列表名称不能为空','error');return}store.lists.push({id:Math.max(...store.lists.map(l=>l.id),0)+1,name:n,fund_codes:[]});i.value='';renderLists();showToast('列表创建成功')}
+function handleRenameList(id){const n=prompt('请输入新的列表名称:');if(!n?.trim())return;const l=store.lists.find(x=>x.id===id);if(l){l.name=n.trim();renderLists();showToast('重命名成功')}}
+function handleDeleteList(id){const l=store.lists.find(x=>x.id===id);if(!l)return;if(l.fund_codes.length>0){if(!confirm('确定删除列表"'+l.name+'"吗？将移除'+l.fund_codes.length+'只基金。'))return;if(!confirm('请再次确认删除列表"'+l.name+'"，'+l.fund_codes.length+'只基金将被移除且无法恢复。'))return}else{if(!confirm('确定删除列表"'+l.name+'"吗？'))return}store.lists=store.lists.filter(x=>x.id!==id);if(store.selectedListId===id){store.selectedListId=null;store.selectedFundCode=null}renderLists();renderFundList();renderFundDetail();showToast('列表已删除')}
+function selectList(id){store.selectedListId=id;store.selectedFundCode=null;renderLists();renderFundList();renderFundDetail()}
+function getSortLabel(k){if(k==='holding_amount')return'持仓金额';if(k==='daily_change_amount')return'涨跌额';return'涨跌幅'}
+function getSortVal(f,k){if(k==='holding_amount')return f.holding_amount??0;if(k==='daily_change_amount')return f.daily_change_amount??0;return parseFloat(f.change_percent)||0}
+function renderFundList(){const list=store.lists.find(l=>l.id===store.selectedListId);const tb=document.getElementById('fundsToolbar'),ft=document.getElementById('fundTable'),ftr=document.getElementById('fundsFooter'),emp=document.getElementById('fundsEmpty'),tt=document.getElementById('listTitle'),st=document.getElementById('listSubtitle');if(!list){tb.style.display='none';ft.style.display='none';ftr.style.display='none';emp.style.display='flex';tt.textContent='请选择一个列表';st.textContent='从左侧选择列表后查看基金详情';return}tb.style.display='flex';ft.style.display='flex';ftr.style.display='block';emp.style.display='none';tt.textContent=list.name;st.textContent=list.fund_codes.length+' 只基金 · 当前排序：'+getSortLabel(store.sortKey);let funds=list.fund_codes.map(c=>store.funds[c]).filter(Boolean);if(store.sortOrder!=='none'){funds.sort((a,b)=>{const av=getSortVal(a,store.sortKey),bv=getSortVal(b,store.sortKey);return store.sortOrder==='asc'?av-bv:bv-av})}document.getElementById('sortLabel').textContent=getSortLabel(store.sortKey);const body=document.getElementById('fundBody');body.innerHTML=funds.map(f=>{const pos=parseFloat(f.change_percent)>=0;const cls=pos?'positive':'negative';const sel=store.selectedFundCode===f.code?'selected':'';let mv='';if(store.sortKey==='daily_change_percent')mv=f.change_percent;else if(store.sortKey==='daily_change_amount')mv=fmtS(f.daily_change_amount);else mv=fmt(f.holding_amount);return'<div class="fund-row '+sel+'" data-code="'+f.code+'"><div class="fund-info"><span class="fund-code">'+f.code+'</span><span class="fund-name">'+f.name+'</span></div><div class="fund-metric '+cls+'">'+mv+'</div><div class="fund-action"><button class="button small danger" data-action="remove" data-code="'+f.code+'">删除</button></div></div>'}).join('');let total=0;funds.forEach(f=>{if(f.holding_amount!=null)f.holding_amount!=null});const te=document.getElementById('dailyChangeTotal');te.textContent=fmtS(total);te.className='fund-change '+(total>=0?'positive':'negative')}
+function renderFundDetail(){const c=document.getElementById('detailContent');const f=store.selectedFundCode?store.funds[store.selectedFundCode]:null;if(!f){c.innerHTML='<div class="empty-state" style="height:100%"><div class="panel-title">请选择基金</div><div class="panel-subtitle">选择基金后查看详情与走势</div></div>';return}const pos=parseFloat(f.change_percent)>=0;const cls=pos?'positive':'negative';const ha=f.holding_amount??null,hs=f.holding_shares??null;const dailyAmt=ha!=null&&f.net_value?f.daily_change_amount*(ha/f.net_value):null;c.innerHTML='<div class="detail-hero"><div class="panel-title">'+f.name+'</div><div class="panel-subtitle">基金代码：'+f.code+'</div><div class="panel-subtitle">更新时间：'+f.update_time+'</div></div><div class="detail-grid"><div class="metric-card"><div class="metric-label">最新净值</div><div class="metric-value">'+f.net_value.toFixed(4)+'</div></div><div class="metric-card"><div class="metric-label">当日涨跌幅</div><div class="metric-value fund-change '+cls+'">'+f.change_percent+'%</div></div><div class="metric-card"><div class="metric-label">当日涨跌额</div><div class="metric-value">'+(f.daily_change_amount>0?'+':'')+f.daily_change_amount.toFixed(4)+'</div></div></div><div class="holding-section"><div class="holding-header"><h4>持仓设置</h4></div><div class="holding-fields"><label>持仓金额<input type="number" id="holdingAmount" value="'+(ha!=null?ha.toFixed(2):'')+'" placeholder="0.00" step="0.01"></label><label>持仓份额<input type="number" id="holdingShares" value="'+(hs!=null?hs.toFixed(2):'')+'" placeholder="0.00" step="0.01"></label><label>成本价<div class="holding-readonly" id="costPrice">'+(hs&&hs>0&&ha?(ha/hs).toFixed(4):'--')+'</div></label></div><div class="holding-actions"><button class="button" id="clearHoldingBtn">清空</button><button class="button primary" id="saveHoldingBtn">保存</button></div><div class="holding-summary"><div><span>持仓金额</span><strong>'+fmt(ha)+'</strong></div><div><span>当日涨跌金额</span><strong class="fund-change '+cls+'">'+fmtS(dailyAmt)+'</strong></div></div></div><div class="fund-trend-stack"><div class="trend-title">单位净值走势</div><div class="chart-container"><svg class="chart-svg" viewBox="0 0 300 100" preserveAspectRatio="none"><polyline fill="none" stroke="'+cls+'" stroke-width="2" points="0,80 30,70 60,75 90,50 120,45 150,55 180,40 210,35 240,45 270,30 300,25"/></svg></div></div>'}
+function handleAddFund(){const i=document.getElementById('addFundInput'),c=i.value.trim();if(!/^\d{6}$/.test(c)){showToast('请输入6位基金代码','error');return}const list=store.lists.find(l=>l.id===store.selectedListId);if(!list)return;if(list.fund_codes.includes(c)){store.selectedFundCode=c;renderFundList();renderFundDetail();showToast('基金已在列表中');return}if(!store.funds[c]){showToast('基金不存在','error');return}list.fund_codes.push(c);i.value='';renderFundList();renderFundDetail();showToast('已添加到列表')}
+function handleRemoveFund(code){const list=store.lists.find(l=>l.id===store.selectedListId);if(!list)return;list.fund_codes=list.fund_codes.filter(c=>c!==code);if(store.selectedFundCode===code)store.selectedFundCode=null;renderFundList();renderFundDetail();showToast('已从列表移除')}
+function handleSaveHolding(){const amt=parseFloat(document.getElementById('holdingAmount').value),sh=parseFloat(document.getElementById('holdingShares').value);if(store.selectedFundCode){const f=store.funds[store.selectedFundCode];f.holding_amount=isNaN(amt)?null:amt;f.holding_shares=isNaN(sh)?null:sh;renderFundDetail();showToast('持仓已保存')}}
+function handleClearHolding(){if(store.selectedFundCode){store.funds[store.selectedFundCode].holding_amount=null;store.funds[store.selectedFundCode].holding_shares=null;renderFundDetail();showToast('持仓已清空')}}
+function handleChatSend(){const i=document.getElementById('chatInput'),t=i.value.trim();if(!t)return;const m=document.getElementById('chatMessages'),tm=new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});m.innerHTML+='<div class="chat-message user">'+t+'<div class="message-time">'+tm+'</div></div>';m.innerHTML+='<div class="chat-message assistant">收到消息: '+t+'。这是模拟回复，实际需要连接AI后端。<div class="message-time">'+tm+'</div></div>';i.value='';m.scrollTop=m.scrollHeight}
+function updateTime(){document.getElementById('updateTime').textContent=new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})}
+document.getElementById('createListBtn').onclick=handleCreateList;
+document.getElementById('newListName').onkeypress=e=>{if(e.key==='Enter')handleCreateList()};
+document.getElementById('listsContainer').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.listId)selectList(parseInt(b.dataset.listId));else if(b.dataset.action==='rename')handleRenameList(parseInt(b.dataset.id));else if(b.dataset.action==='delete')handleDeleteList(parseInt(b.dataset.id))};
+document.querySelectorAll('.sort-btn').forEach(b=>{b.onclick=()=>{const k=b.dataset.sort;if(store.sortKey!==k){store.sortKey=k;store.sortOrder='desc'}else if(store.sortOrder==='desc')store.sortOrder='asc';else store.sortOrder='none';document.querySelectorAll('.sort-btn').forEach(btn=>{const icon=btn.querySelector('.sort-icon');if(btn.dataset.sort===store.sortKey&&store.sortOrder!=='none'){btn.classList.add('active');icon.textContent=store.sortOrder==='desc'?'降序':'升序'}else{btn.classList.remove('active');icon.textContent='未排序'}});renderFundList()}});
+document.getElementById('addFundBtn').onclick=handleAddFund;
+document.getElementById('addFundInput').onkeypress=e=>{if(e.key==='Enter')handleAddFund()};
+document.getElementById('fundBody').onclick=e=>{const b=e.target.closest('.fund-row');if(b){store.selectedFundCode=b.dataset.code;renderFundList();renderFundDetail()}const r=e.target.closest('[data-action="remove"]');if(r){r.stopPropagation();handleRemoveFund(r.dataset.code)}};
+document.getElementById('panel-detail').onclick=e=>{if(e.target.id==='saveHoldingBtn')handleSaveHolding();if(e.target.id==='clearHoldingBtn')handleClearHolding()};
+document.querySelectorAll('.tab-btn').forEach(b=>{b.onclick=()=>{document.querySelectorAll('.tab-btn').forEach(btn=>btn.classList.remove('active'));b.classList.add('active');const tab=b.dataset.tab;document.getElementById('panel-funds').style.display=tab==='funds'?'flex':'none';document.getElementById('panel-detail').style.display=tab==='funds'?'flex':'none';document.getElementById('panel-chat').style.display=tab==='ai'?'flex':'none';if(tab==='ai')document.getElementById('panel-chat').style.gridColumn='2/4';else document.getElementById('panel-chat').style.gridColumn=''}});
+document.getElementById('chatSendBtn').onclick=handleChatSend;
+document.getElementById('chatInput').onkeypress=e=>{if(e.key==='Enter')handleChatSend()};
+renderLists();
+setInterval(updateTime,60000);
+</script>
+</body>
+</html>

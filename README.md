@@ -1,5 +1,7 @@
 # 📈 基金查询客户端 (Leek Fund)
 
+![Leek Fund](leekimage.png)
+
 一个基于 Tauri + Rust + React 构建的跨平台桌面应用，用于查询、管理中国基金信息。
 
 ## ✨ 功能特性
