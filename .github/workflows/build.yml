@@ -71,6 +71,7 @@ jobs:
         with:
           args: ${{ matrix.args }}
           tagName: ${{ github.ref_name }}
+          releaseName: Leek Fund v0.1.0
 
       - name: Set artifact path
         id: artifact
