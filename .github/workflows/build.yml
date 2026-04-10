@@ -79,6 +79,7 @@ jobs:
 
       - name: Set artifact path
         id: artifact
+        shell: bash
         run: |
           if [ "${{ matrix.platform }}" = "macos-14" ]; then
             echo "path=src-tauri/target/aarch64-apple-darwin/release/bundle" >> $GITHUB_OUTPUT
