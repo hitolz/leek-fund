@@ -149,6 +149,33 @@ pub fn get_popular_cryptos() -> Vec<(&'static str, &'static str)> {
     CRYPTO_NAMES.to_vec()
 }
 
+/// 保存加密货币/黄金每日行情到数据库
+pub async fn save_crypto_daily_quote(
+    pool: &sqlx::SqlitePool,
+    quote: &CryptoQuote,
+    date: &str,
+) -> crate::errors::AppResult<()> {
+    let now = chrono::Utc::now().timestamp();
+    sqlx::query(
+        "INSERT OR REPLACE INTO crypto_daily_quotes \
+         (symbol, quote_date, price, change_percent, high_24h, low_24h, volume_24h, created_at) \
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+    )
+    .bind(&quote.symbol)
+    .bind(date)
+    .bind(quote.price)
+    .bind(quote.change_percent)
+    .bind(quote.high_24h)
+    .bind(quote.low_24h)
+    .bind(quote.volume_24h)
+    .bind(now)
+    .execute(pool)
+    .await
+    .map_err(|e| crate::errors::AppError::StorageError(format!("保存加密货币行情失败: {e}")))?;
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

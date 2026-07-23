@@ -5,6 +5,8 @@ pub fn load_migration_sqls() -> AppResult<Vec<String>> {
         include_str!("001_init.sql").to_string(),
         include_str!("002_group_fund_positions.sql").to_string(),
         include_str!("003_ai_copilot.sql").to_string(),
+        include_str!("004_operations.sql").to_string(),
+        include_str!("005_daily_history.sql").to_string(),
     ])
 }
 

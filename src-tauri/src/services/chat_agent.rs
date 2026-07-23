@@ -6,7 +6,7 @@ use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
 use tokio_stream::StreamExt;
 
-const MAX_TOOL_ROUNDS: usize = 5;
+const MAX_TOOL_ROUNDS: usize = 20;
 
 /// 流式回复，支持 tool calling agent loop
 pub async fn stream_reply(
@@ -131,7 +131,8 @@ fn build_system_prompt(portfolio_context: Option<&str>) -> String {
          2. 明确区分事实（来自数据）、推断（基于证据的推测）和未知（数据不足）\n\
          3. 使用中文回答，回答简洁有力\n\
          4. 保持多轮对话连续性，可以引用用户在当前会话中明确提供的信息\n\
-         5. 用户询问之前明确提供的信息时，优先从会话历史查找并原样回答\n\n\
+         5. 用户询问之前明确提供的信息时，优先从会话历史查找并原样回答\n\
+         6. 计算金额时必须用百分比乘以总市值，不要凭感觉估算。例如：贡献-0.2% × 总市值15万 = -300元\n\n\
          投资建议框架（当用户询问买卖操作时）：\n\
          你应当给出明确的操作建议（买入/卖出/持有/定投/减仓/加仓），并遵循以下分析框架：\n\n\
          1. **估值分析**：当前净值/价格处于历史什么分位？低估区间优先考虑买入，高估区间考虑减仓\n\
@@ -164,8 +165,24 @@ fn build_system_prompt(portfolio_context: Option<&str>) -> String {
          - 如果需要深入分析基金，可以调用 get_local_fund_profile 获取本地存储的历史数据\n\
          - 如果用户已在自选列表中添加了该基金，可以调用 get_fund_detail 获取持仓详情\n\
          - 如果不确定资产类型，可以用 search_stock 搜索，或直接尝试最可能的工具\n\
+         - 当用户询问市场动态、财经新闻时，调用 get_financial_news\n\
+         - 当用户询问某只股票/基金的新闻时，调用 get_stock_news\n\
+         - 当用户有复杂的自然语言查询需求时，可以用 query_wencai 查询\n\
          - 获取到数据后，基于实际数据为用户提供分析和建议\n\
-         - 在给出建议前，尽量多调用工具获取完整数据，不要在数据不足时仓促给出建议\n\n",
+         - 在给出建议前，尽量多调用工具获取完整数据，不要在数据不足时仓促给出建议\n\
+         - 结合新闻和行情数据，分析市场情绪和事件对持仓的潜在影响\n\
+         - 当用户描述投资操作时（如\"买了5000块基金\"），调用 record_operation 记录\n\
+         - 当用户询问操作历史时，调用 query_operations 查询\n\
+         - 当用户询问汇总统计时，调用 get_operations_summary\n\
+         - 当用户想做定投回测时，调用 backtest_dca\n\
+         - 当用户询问再平衡建议时，调用 suggest_rebalance\n\
+         - 当用户询问持仓相关性时，调用 analyze_correlation\n\
+         - 当用户想建仓时，调用 build_portfolio\n\
+         - 当用户询问市场情绪时，调用 get_market_sentiment\n\
+         - 当用户询问税务优化时，调用 tax_optimization\n\
+         - 当用户想筛选基金时，调用 screen_funds\n\
+         - 当用户想看每日报告时，调用 generate_daily_report\n\
+         - 当用户想做风险模拟时，调用 monte_carlo_simulation\n\n",
     );
 
     if let Some(context) = portfolio_context {

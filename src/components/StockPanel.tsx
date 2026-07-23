@@ -367,12 +367,14 @@ const StockCard: React.FC<{
     if (!holding || !stock.price) return null;
     const currentValue = holding.holding_shares * stock.price;
     const costPrice = holding.cost_price; // 成本价
-    // 当日涨跌额 = (现价 - 成本价) * 持仓数量
-    const dailyChangeAmount = (stock.price - costPrice) * holding.holding_shares;
+    // 总盈亏 = (现价 - 成本价) * 持仓数量
+    const totalProfit = (stock.price - costPrice) * holding.holding_shares;
+    // 当日涨跌额 = 股票涨跌额 * 持仓数量
+    const dailyChangeAmount = (stock.change_amount ?? 0) * holding.holding_shares;
     const profitPercent = costPrice > 0
       ? ((stock.price - costPrice) / costPrice) * 100
       : 0;
-    return { dailyChangeAmount, profitPercent, currentValue, costPrice };
+    return { totalProfit, dailyChangeAmount, profitPercent, currentValue, costPrice };
   };
 
   const profitInfo = calculateProfit();
@@ -401,11 +403,11 @@ const StockCard: React.FC<{
 
       {/* 总计涨跌额（有持仓时显示） */}
       {profitInfo && (
-        <div className={`total-profit ${profitInfo.dailyChangeAmount >= 0 ? "up" : "down"}`}>
+        <div className={`total-profit ${profitInfo.totalProfit >= 0 ? "up" : "down"}`}>
           <span className="profit-label">总计涨跌额</span>
           <span className="profit-value">
-            {profitInfo.dailyChangeAmount >= 0 ? "+" : ""}¥
-            {profitInfo.dailyChangeAmount.toFixed(2)}
+            {profitInfo.totalProfit >= 0 ? "+" : ""}¥
+            {profitInfo.totalProfit.toFixed(2)}
           </span>
         </div>
       )}

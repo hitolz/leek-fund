@@ -227,6 +227,36 @@ fn parse_tencent_hk_response(code: &str, text: &str) -> AppResult<StockQuote> {
     })
 }
 
+/// 保存股票每日行情到数据库
+pub async fn save_stock_daily_quote(
+    pool: &sqlx::SqlitePool,
+    quote: &StockQuote,
+    date: &str,
+) -> crate::errors::AppResult<()> {
+    let now = chrono::Utc::now().timestamp();
+    sqlx::query(
+        "INSERT OR REPLACE INTO stock_daily_quotes \
+         (code, quote_date, price, change_percent, change_amount, open, high, low, yesterday_close, volume, created_at) \
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+    )
+    .bind(&quote.code)
+    .bind(date)
+    .bind(quote.price)
+    .bind(quote.change_percent)
+    .bind(quote.change_amount)
+    .bind(quote.open)
+    .bind(quote.high)
+    .bind(quote.low)
+    .bind(quote.yesterday_close)
+    .bind(quote.volume)
+    .bind(now)
+    .execute(pool)
+    .await
+    .map_err(|e| crate::errors::AppError::StorageError(format!("保存股票行情失败: {e}")))?;
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

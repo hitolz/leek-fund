@@ -313,12 +313,18 @@ const CryptoCard: React.FC<{
     if (!holding || !crypto.price) return null;
     const currentValue = holding.holding_quantity * crypto.price;
     const costPrice = holding.cost_price; // 成本价
-    // 当日涨跌额 = (现价 - 成本价) * 持仓数量
-    const dailyChangeAmount = (crypto.price - costPrice) * holding.holding_quantity;
+    // 总盈亏 = (现价 - 成本价) * 持仓数量
+    const totalProfit = (crypto.price - costPrice) * holding.holding_quantity;
+    // 当日涨跌额 = 从涨跌幅反推前一日价格，再计算差额
+    const changePercent = crypto.change_percent ?? 0;
+    const previousPrice = changePercent !== -100
+      ? crypto.price / (1 + changePercent / 100)
+      : crypto.price;
+    const dailyChangeAmount = (crypto.price - previousPrice) * holding.holding_quantity;
     const profitPercent = costPrice > 0
       ? ((crypto.price - costPrice) / costPrice) * 100
       : 0;
-    return { dailyChangeAmount, profitPercent, currentValue, costPrice };
+    return { totalProfit, dailyChangeAmount, profitPercent, currentValue, costPrice };
   };
 
   const profitInfo = calculateProfit();
@@ -352,11 +358,11 @@ const CryptoCard: React.FC<{
 
       {/* 总计涨跌额（有持仓时显示） */}
       {profitInfo && (
-        <div className={`total-profit ${profitInfo.dailyChangeAmount >= 0 ? "up" : "down"}`}>
+        <div className={`total-profit ${profitInfo.totalProfit >= 0 ? "up" : "down"}`}>
           <span className="profit-label">总计涨跌额</span>
           <span className="profit-value">
-            {profitInfo.dailyChangeAmount >= 0 ? "+" : ""}$
-            {profitInfo.dailyChangeAmount.toFixed(2)}
+            {profitInfo.totalProfit >= 0 ? "+" : ""}$
+            {profitInfo.totalProfit.toFixed(2)}
           </span>
         </div>
       )}

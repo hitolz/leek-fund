@@ -37,6 +37,7 @@ const suggestions = [
   "今天我的组合主要受什么影响？",
   "哪些持仓的数据不完整？",
   "从集中度角度检查我的组合",
+  "跑一下蒙特卡洛模拟",
 ];
 
 export const ChatWorkspace: React.FC<ChatWorkspaceProps> = ({
