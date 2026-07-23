@@ -13,6 +13,10 @@ fn build_http_client() -> Client {
         .expect("Failed to build HTTP client")
 }
 
+/// 天天基金实时估值 API（替代已下线的 fundgz.1234567.com.cn）
+const FUND_VALUATION_API: &str = "https://fundcomapi.tiantianfunds.com/mm/newCore/FundValuationLast";
+const FUND_VALUATION_FIELDS: &str = "FCODE,SHORTNAME,GSZZL,GZTIME,GSZ,NAV,PDATE";
+
 /// 搜索基金信息
 pub async fn search_fund_info(code: &str) -> AppResult<FundInfo> {
     // 验证基金代码格式
@@ -23,21 +27,86 @@ pub async fn search_fund_info(code: &str) -> AppResult<FundInfo> {
     }
 
     let client = build_http_client();
-    let url = format!("http://fundgz.1234567.com.cn/js/{}.js", code);
 
-    // 发送 HTTP 请求
-    let response = client.get(&url).send().await?;
+    // 从天天基金新 API 获取实时估值
+    let url = format!(
+        "{}?FCODES={}&FIELDS={}",
+        FUND_VALUATION_API, code, FUND_VALUATION_FIELDS
+    );
+    eprintln!("[fund_api] 请求 URL: {}", url);
 
-    // 检查响应状态
-    if !response.status().is_success() {
+    let resp = client.get(&url).send().await?;
+
+    if !resp.status().is_success() {
+        eprintln!("[fund_api] 响应状态: {}", resp.status());
         return Err(AppError::NotFound(code.to_string()));
     }
 
-    // 获取响应文本
-    let text = response.text().await?;
+    let resp_text = resp.text().await?;
+    eprintln!("[fund_api] 响应内容: {}", resp_text);
 
-    // 解析 JSONP 响应
-    parse_jsonp_response(&text, code)
+    let json: serde_json::Value = serde_json::from_str(&resp_text)?;
+
+    if !json["success"].as_bool().unwrap_or(false) {
+        return Err(AppError::NotFound(code.to_string()));
+    }
+
+    let items = json["data"]
+        .as_array()
+        .ok_or_else(|| AppError::ParseError("缺少数据".to_string()))?;
+
+    if items.is_empty() {
+        return Err(AppError::NotFound(code.to_string()));
+    }
+
+    let item = &items[0];
+
+    let fund_code = item["FCODE"]
+        .as_str()
+        .ok_or_else(|| AppError::ParseError("缺少基金代码".to_string()))?
+        .to_string();
+
+    if fund_code != code {
+        return Err(AppError::NotFound(code.to_string()));
+    }
+
+    let name = item["SHORTNAME"]
+        .as_str()
+        .unwrap_or(code)
+        .to_string();
+
+    // 优先使用实时估值 GSZ，如果没有则使用最新净值 NAV
+    let net_value = item["GSZ"]
+        .as_f64()
+        .or_else(|| item["NAV"].as_str().and_then(|s| s.parse::<f64>().ok()))
+        .or_else(|| item["NAV"].as_f64());
+
+    // 优先使用实时涨跌幅 GSZZL
+    let change_percent = item["GSZZL"]
+        .as_f64()
+        .map(|v| format!("{}", v))
+        .or_else(|| {
+            item["GSZZL"].as_str().map(|s| s.to_string())
+        });
+
+    // 优先使用估值时间 GZTIME，如果没有则使用净值日期 PDATE
+    let update_time = item["GZTIME"]
+        .as_str()
+        .filter(|s| !s.is_empty() && *s != "null")
+        .or_else(|| item["PDATE"].as_str())
+        .map(|s| s.to_string())
+        .or_else(|| Some(chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string()));
+
+    eprintln!("[fund_api] 解析结果: code={}, name={}, net_value={:?}, change_percent={:?}, update_time={:?}",
+        fund_code, name, net_value, change_percent, update_time);
+
+    Ok(FundInfo {
+        code: fund_code,
+        name,
+        net_value,
+        change_percent,
+        update_time,
+    })
 }
 
 pub async fn get_fund_summary(code: &str) -> AppResult<FundSummary> {
@@ -76,13 +145,20 @@ pub async fn get_fund_trend(code: &str) -> AppResult<FundTrend> {
 
     let client = build_http_client();
     let url = format!("https://fund.eastmoney.com/pingzhongdata/{}.js", code);
+    eprintln!("[fund_api] 请求走势数据: {}", url);
+
     let response = client.get(&url).send().await?;
     if !response.status().is_success() {
+        eprintln!("[fund_api] 走势请求失败: {}", response.status());
         return Err(AppError::FundTrendUnavailable(code.to_string()));
     }
 
     let text = response.text().await?;
+    eprintln!("[fund_api] 走响响应大小: {} bytes", text.len());
+
     let mut points = parse_trend_points(&text)?;
+    eprintln!("[fund_api] 解析到 {} 个走势点", points.len());
+
     if points.is_empty() {
         return Err(AppError::FundTrendUnavailable(code.to_string()));
     }
@@ -233,124 +309,10 @@ fn extract_js_array(text: &str, var_name: &str) -> Option<String> {
     Some(text[start..end].to_string())
 }
 
-/// 解析 JSONP 响应
-/// 响应格式: jsonpgz({"fundcode":"001632","name":"...","gsz":"1.234","gztime":"2024-10-20 15:00"})
-pub(crate) fn parse_jsonp_response(text: &str, code: &str) -> AppResult<FundInfo> {
-    // 提取 JSON 部分（去掉 jsonpgz( 和 )），兼容尾部分号/空白
-    let trimmed = text.trim();
-    let trimmed = trimmed.strip_suffix(';').unwrap_or(trimmed).trim();
-    let json_str = trimmed
-        .strip_prefix("jsonpgz(")
-        .and_then(|s| s.strip_suffix(")"))
-        .ok_or_else(|| AppError::ParseError("无效的JSONP格式".to_string()))?;
-    if json_str == "null" || json_str.is_empty() {
-        return Err(AppError::NotFound(code.to_string()));
-    }
-
-    // 解析 JSON
-    let json: serde_json::Value = serde_json::from_str(json_str)?;
-
-    // 提取字段
-    let fund_code = json["fundcode"]
-        .as_str()
-        .ok_or_else(|| AppError::ParseError("缺少基金代码".to_string()))?
-        .to_string();
-
-    let name = json["name"]
-        .as_str()
-        .ok_or_else(|| AppError::ParseError("缺少基金名称".to_string()))?
-        .to_string();
-
-    // 净值、涨跌幅和更新时间可能不存在
-    let net_value = json["gsz"]
-        .as_str()
-        .and_then(|s| s.parse::<f64>().ok());
-
-    let change_percent = json["gszzl"].as_str().map(|s| s.to_string());
-
-    let update_time = json["gztime"].as_str().map(|s| s.to_string());
-
-    // 验证基金代码是否匹配
-    if fund_code != code {
-        return Err(AppError::NotFound(code.to_string()));
-    }
-
-    Ok(FundInfo {
-        code: fund_code,
-        name,
-        net_value,
-        change_percent,
-        update_time,
-    })
-}
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_parse_jsonp_response() {
-        let response = r#"jsonpgz({"fundcode":"001632","name":"兴全轻资产混合(LOF)","gsz":"3.1234","gztime":"2024-10-20 15:00"})"#;
-        
-        let fund = parse_jsonp_response(response, "001632").unwrap();
-        assert_eq!(fund.code, "001632");
-        assert_eq!(fund.name, "兴全轻资产混合(LOF)");
-        assert_eq!(fund.net_value, Some(3.1234));
-        assert_eq!(fund.change_percent, None);
-        assert_eq!(fund.update_time, Some("2024-10-20 15:00".to_string()));
-    }
-
-    #[test]
-    fn test_parse_jsonp_without_optional_fields() {
-        let response = r#"jsonpgz({"fundcode":"001632","name":"测试基金"})"#;
-        
-        let fund = parse_jsonp_response(response, "001632").unwrap();
-        assert_eq!(fund.code, "001632");
-        assert_eq!(fund.name, "测试基金");
-        assert_eq!(fund.net_value, None);
-        assert_eq!(fund.change_percent, None);
-        assert_eq!(fund.update_time, None);
-    }
-
-    #[test]
-    fn test_invalid_jsonp_format() {
-        let response = r#"invalid response"#;
-        let result = parse_jsonp_response(response, "001632");
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_parse_jsonp_with_trailing_semicolon() {
-        let response =
-            r#"jsonpgz({"fundcode":"001632","name":"测试基金","gsz":"1.234"});"#;
-        let fund = parse_jsonp_response(response, "001632").unwrap();
-        assert_eq!(fund.code, "001632");
-        assert_eq!(fund.name, "测试基金");
-        assert_eq!(fund.net_value, Some(1.234));
-    }
-
-    #[test]
-    fn test_parse_jsonp_with_whitespace() {
-        let response =
-            "  jsonpgz({\"fundcode\":\"001632\",\"name\":\"测试基金\"})  \n";
-        let fund = parse_jsonp_response(response, "001632").unwrap();
-        assert_eq!(fund.code, "001632");
-        assert_eq!(fund.name, "测试基金");
-    }
-
-    #[test]
-    fn test_parse_jsonp_null() {
-        let response = r#"jsonpgz(null);"#;
-        let result = parse_jsonp_response(response, "001632");
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_code_mismatch() {
-        let response = r#"jsonpgz({"fundcode":"999999","name":"测试基金"})"#;
-        let result = parse_jsonp_response(response, "001632");
-        assert!(result.is_err());
-    }
 
     #[test]
     fn test_extract_trend_points() {

@@ -1,6 +1,6 @@
 | 数据来源 | api 地址 |
 | --- | --- |
-| 天天基金(估值) | `https://fundgz.1234567.com.cn/js/{code}.js` |
+| 天天基金(实时估值) | `https://fundcomapi.tiantianfunds.com/mm/newCore/FundValuationLast?FCODES={code}&FIELDS=FCODE,SHORTNAME,GSZZL,GZTIME,GSZ,NAV,PDATE` |
 | 新浪基金排行 | `http://vip.stock.finance.sina.com.cn/fund_center/data/jsonp.php/...` |
 | 东财基金历史净值 | `http://fund.eastmoney.com/f10/F10DataApi.aspx?type=lsjz&code={code}&page=1&per=49` |
 | 东财基金走势图/净值数据 | `http://fund.eastmoney.com/pingzhongdata/{code}.js` |

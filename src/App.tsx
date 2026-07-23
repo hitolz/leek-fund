@@ -1,11 +1,17 @@
 import { useEffect, useState } from "react";
 import { ListsPanel } from "./components/ListsPanel";
 import { ListDetailView } from "./components/ListDetailView";
+import { StockPanel } from "./components/StockPanel";
+import { CryptoPanel } from "./components/CryptoPanel";
+import { GoldPanel } from "./components/GoldPanel";
+import { AiChatPanel } from "./components/AiChatPanel";
 import { useTauriCommands } from "./hooks/useTauriCommands";
 import { FundDetail, FundList, FundTrend, Holding } from "./types";
 import { useToast } from "./components/ToastContext";
 import { FundDetailPanel } from "./components/FundDetailPanel";
 import "./App.css";
+
+type ActiveTab = "fund" | "stock" | "crypto" | "gold" | "ai";
 
 interface AppProps {
   globalRefreshMs: number;
@@ -18,6 +24,7 @@ type FundSortKey =
 
 function App({ globalRefreshMs }: AppProps) {
   const showToast = useToast();
+  const [activeTab, setActiveTab] = useState<ActiveTab>("fund");
   const [lists, setLists] = useState<FundList[]>([]);
   const [selectedListId, setSelectedListId] = useState<number | null>(null);
   const [selectedFundCode, setSelectedFundCode] = useState<string | null>(null);
@@ -167,6 +174,7 @@ function App({ globalRefreshMs }: AppProps) {
         const trend = await getFundTrend(selectedFundCode);
         setFundTrend(trend);
       } catch (error) {
+        console.error("Failed to load trend:", error);
         setFundTrend(null);
       }
     };
@@ -243,10 +251,52 @@ function App({ globalRefreshMs }: AppProps) {
     <div className="app-shell">
       <header className="topbar">
         <div className="topbar-left">
-          <span className="meta-pill">当前列表：{selectedList?.name || "未选择"}</span>
-          <span className="meta-pill ghost">
-            当前基金：{fundDetail?.name || selectedFundCode || "未选择"}
-          </span>
+          {/* Tab 导航 */}
+          <div className="tab-navigation">
+            <button
+              type="button"
+              className={`tab-btn ${activeTab === "fund" ? "active" : ""}`}
+              onClick={() => setActiveTab("fund")}
+            >
+              基金
+            </button>
+            <button
+              type="button"
+              className={`tab-btn ${activeTab === "stock" ? "active" : ""}`}
+              onClick={() => setActiveTab("stock")}
+            >
+              股票
+            </button>
+            <button
+              type="button"
+              className={`tab-btn ${activeTab === "crypto" ? "active" : ""}`}
+              onClick={() => setActiveTab("crypto")}
+            >
+              加密货币
+            </button>
+            <button
+              type="button"
+              className={`tab-btn ${activeTab === "gold" ? "active" : ""}`}
+              onClick={() => setActiveTab("gold")}
+            >
+              黄金
+            </button>
+            <button
+              type="button"
+              className={`tab-btn ${activeTab === "ai" ? "active" : ""}`}
+              onClick={() => setActiveTab("ai")}
+            >
+              AI
+            </button>
+          </div>
+          {activeTab === "fund" && (
+            <>
+              <span className="meta-pill">当前列表：{selectedList?.name || "未选择"}</span>
+              <span className="meta-pill ghost">
+                当前基金：{fundDetail?.name || selectedFundCode || "未选择"}
+              </span>
+            </>
+          )}
         </div>
         <div className="topbar-meta">
           <span className="meta-pill">刷新间隔：{globalRefreshMs / 1000}s</span>
@@ -254,90 +304,121 @@ function App({ globalRefreshMs }: AppProps) {
         </div>
       </header>
 
-      <div className={`layout ${leftCollapsed ? "panel-hidden" : ""}`}>
-        <aside className={`panel left-panel ${leftCollapsed ? "hidden" : ""}`}>
-          <div className="panel-header">
-            <div>
-              <div className="panel-title">基金列表</div>
-              <div className="panel-subtitle">
-                {lists.length} 个列表 · 选择后显示基金
+      {/* 基金模块 */}
+      {activeTab === "fund" && (
+        <div className={`layout ${leftCollapsed ? "panel-hidden" : ""}`}>
+          <aside className={`panel left-panel ${leftCollapsed ? "hidden" : ""}`}>
+            <div className="panel-header">
+              <div>
+                <div className="panel-title">基金列表</div>
+                <div className="panel-subtitle">
+                  {lists.length} 个列表 · 选择后显示基金
+                </div>
               </div>
+              <button
+                type="button"
+                className="button ghost small"
+                onClick={() => setLeftCollapsed(true)}
+              >
+                隐藏
+              </button>
             </div>
+            <div className="panel-body">
+              {listsError && <div className="list-error">{listsError}</div>}
+              <ListsPanel
+                lists={lists}
+                selectedListId={selectedListId}
+                onSelectList={setSelectedListId}
+                onListsChange={handleListsChange}
+                showToast={showToast}
+              />
+            </div>
+            <div className="panel-footer">
+              <button
+                type="button"
+                className="button ghost small collapse-btn"
+                onClick={() => setLeftCollapsed(true)}
+              >
+                收起列表
+              </button>
+            </div>
+          </aside>
+
+          {leftCollapsed && (
             <button
               type="button"
-              className="button ghost small"
-              onClick={() => setLeftCollapsed(true)}
+              className="panel-toggle-floating"
+              onClick={() => setLeftCollapsed(false)}
+              aria-label="展开列表"
             >
-              隐藏
+              展开列表
             </button>
-          </div>
-          <div className="panel-body">
-            {listsError && <div className="list-error">{listsError}</div>}
-            <ListsPanel
-              lists={lists}
-              selectedListId={selectedListId}
-              onSelectList={setSelectedListId}
-              onListsChange={handleListsChange}
-              showToast={showToast}
-            />
-          </div>
-          <div className="panel-footer">
-            <button
-              type="button"
-              className="button ghost small collapse-btn"
-              onClick={() => setLeftCollapsed(true)}
-            >
-              收起列表
-            </button>
-          </div>
-        </aside>
+          )}
 
-        {leftCollapsed && (
-          <button
-            type="button"
-            className="panel-toggle-floating"
-            onClick={() => setLeftCollapsed(false)}
-            aria-label="展开列表"
-          >
-            展开列表
-          </button>
-        )}
+          <main className="panel middle-panel">
+            <div className="panel-body panel-body-fixed">
+              <ListDetailView
+                listId={selectedListId}
+                listName={selectedList?.name || ""}
+                selectedFundCode={selectedFundCode}
+                onSelectFund={setSelectedFundCode}
+                onListsChange={handleListsChange}
+                showToast={showToast}
+                refreshIntervalMs={globalRefreshMs}
+                holdingVersion={holdingVersion}
+                sortKey={sortKey}
+                sortOrder={sortOrder}
+                onSortKeyChange={setSortKey}
+                onSortOrderChange={setSortOrder}
+              />
+            </div>
+          </main>
 
-        <main className="panel middle-panel">
-          <div className="panel-body panel-body-fixed">
-            <ListDetailView
-              listId={selectedListId}
-              listName={selectedList?.name || ""}
-              selectedFundCode={selectedFundCode}
-              onSelectFund={setSelectedFundCode}
-              onListsChange={handleListsChange}
-              showToast={showToast}
-              refreshIntervalMs={globalRefreshMs}
-              holdingVersion={holdingVersion}
-              sortKey={sortKey}
-              sortOrder={sortOrder}
-              onSortKeyChange={setSortKey}
-              onSortOrderChange={setSortOrder}
-            />
-          </div>
-        </main>
+          <aside className="panel right-panel">
+            <div className="panel-body">
+              <FundDetailPanel
+                detail={fundDetail}
+                trend={fundTrend}
+                loading={fundDetailLoading}
+                error={fundDetailError}
+                holding={holding}
+                holdingLoading={holdingLoading}
+                holdingError={holdingError}
+                onSaveHolding={handleSaveHolding}
+                onClearHolding={handleClearHolding}
+              />
+            </div>
+          </aside>
+        </div>
+      )}
 
-        <aside className="panel right-panel">
-          <div className="panel-body">
-            <FundDetailPanel
-              detail={fundDetail}
-              trend={fundTrend}
-              loading={fundDetailLoading}
-              error={fundDetailError}
-              holding={holding}
-              holdingLoading={holdingLoading}
-              holdingError={holdingError}
-              onSaveHolding={handleSaveHolding}
-              onClearHolding={handleClearHolding}
-            />
-          </div>
-        </aside>
-      </div>
+      {/* 股票模块 */}
+      {activeTab === "stock" && (
+        <div className="module-content">
+          <StockPanel showToast={showToast} />
+        </div>
+      )}
+
+      {/* 加密货币模块 */}
+      {activeTab === "crypto" && (
+        <div className="module-content">
+          <CryptoPanel showToast={showToast} />
+        </div>
+      )}
+
+      {/* 黄金模块 */}
+      {activeTab === "gold" && (
+        <div className="module-content">
+          <GoldPanel showToast={showToast} />
+        </div>
+      )}
+
+      {/* AI 对话模块 */}
+      {activeTab === "ai" && (
+        <div className="module-content">
+          <AiChatPanel showToast={showToast} />
+        </div>
+      )}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 use crate::errors::{AppError, AppResult};
 use crate::models::{FundList, UserData};
+use crate::modules::asset_position;
 use chrono::Utc;
 use crate::migrations;
 use serde::Deserialize;
@@ -29,6 +30,10 @@ pub async fn init_storage(
 
     run_migrations(&pool).await?;
     ensure_group_fund_positions_schema(&pool).await?;
+
+    // 初始化股票和加密货币持仓表
+    asset_position::init_stock_holdings_table(&pool).await?;
+    asset_position::init_crypto_holdings_table(&pool).await?;
 
     if should_migrate(&pool, &legacy_json_path).await? {
         migrate_from_json(&pool, &legacy_json_path).await?;

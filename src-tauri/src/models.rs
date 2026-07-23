@@ -79,6 +79,86 @@ pub struct FundTrend {
     pub points: Vec<TrendPoint>,
 }
 
+/// 股票行情信息
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StockQuote {
+    /// 股票代码（如 sh600519, hk00700）
+    pub code: String,
+    /// 股票名称
+    pub name: String,
+    /// 当前价格
+    pub price: Option<f64>,
+    /// 涨跌幅(%)
+    pub change_percent: Option<f64>,
+    /// 涨跌额
+    pub change_amount: Option<f64>,
+    /// 开盘价
+    pub open: Option<f64>,
+    /// 最高价
+    pub high: Option<f64>,
+    /// 最低价
+    pub low: Option<f64>,
+    /// 昨收价
+    pub yesterday_close: Option<f64>,
+    /// 成交量
+    pub volume: Option<f64>,
+    /// 更新时间
+    pub update_time: Option<String>,
+}
+
+/// 加密货币行情信息
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CryptoQuote {
+    /// 交易对（如 BTCUSDT）
+    pub symbol: String,
+    /// 名称（如 比特币）
+    pub name: String,
+    /// 当前价格
+    pub price: Option<f64>,
+    /// 24h涨跌幅(%)
+    pub change_percent: Option<f64>,
+    /// 24h最高价
+    pub high_24h: Option<f64>,
+    /// 24h最低价
+    pub low_24h: Option<f64>,
+    /// 24h成交量
+    pub volume_24h: Option<f64>,
+    /// 更新时间
+    pub update_time: Option<String>,
+}
+
+/// 聊天会话
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChatSession {
+    pub id: i64,
+    pub session_id: String,
+    pub title: Option<String>,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
+
+/// 聊天消息
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChatMessage {
+    pub id: i64,
+    pub session_id: String,
+    pub role: String,
+    pub content: String,
+    pub saved_state: Option<String>,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
+
+/// 聊天代理信息
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChatAgentInfo {
+    pub id: i64,
+    pub name: String,
+    pub description: Option<String>,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
+
 /// 基金列表
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FundList {

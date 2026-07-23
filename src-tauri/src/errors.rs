@@ -23,6 +23,8 @@ pub enum AppError {
     ListNotFound(String),
     /// 列表名称冲突
     DuplicateListName(String),
+    /// 聊天会话不存在
+    ChatSessionNotFound(String),
 }
 
 impl AppError {
@@ -39,6 +41,7 @@ impl AppError {
             AppError::ValidationError(msg) => msg.clone(),
             AppError::ListNotFound(_) => "列表不存在".to_string(),
             AppError::DuplicateListName(_) => "列表名称已存在，请使用其他名称".to_string(),
+            AppError::ChatSessionNotFound(_) => "聊天会话不存在".to_string(),
         }
     }
 
@@ -55,6 +58,7 @@ impl AppError {
             AppError::ValidationError(e) => e,
             AppError::ListNotFound(e) => e,
             AppError::DuplicateListName(e) => e,
+            AppError::ChatSessionNotFound(e) => e,
         }
     }
 }

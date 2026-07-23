@@ -1,15 +1,20 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod api;
 mod commands;
+mod db;
 mod errors;
+mod http_server;
 mod models;
 mod modules;
 mod migrations;
+mod services;
 
 use models::AppState;
 use modules::storage;
-use std::sync::Mutex;
+use http_server::ChatApiState;
+use std::sync::{Arc, Mutex};
 use tauri::{CustomMenuItem, Manager, Menu, Submenu};
 
 const REFRESH_MENU_ITEMS: &[(u64, &str, &str)] = &[
@@ -46,10 +51,14 @@ fn main() {
                     .expect("Failed to initialize storage");
 
             // 创建应用状态
-            let app_state = AppState::new(pool, db_path, legacy_json_path, warning);
+            let app_state = AppState::new(pool.clone(), db_path, legacy_json_path, warning);
 
             // 管理状态
             app.manage(Mutex::new(app_state));
+
+            // 启动 AI 聊天 HTTP 服务器
+            let chat_state = Arc::new(ChatApiState { pool });
+            tauri::async_runtime::spawn(http_server::start_server(chat_state, 18188));
 
             Ok(())
         })
@@ -84,6 +93,26 @@ fn main() {
             commands::set_holding,
             commands::clear_holding,
             commands::set_refresh_interval,
+            // 股票命令
+            commands::search_stock,
+            commands::get_stock_quote,
+            // 加密货币命令
+            commands::get_crypto_quote,
+            commands::get_crypto_quotes,
+            commands::get_popular_cryptos,
+            // 股票持仓命令
+            commands::get_stock_holding,
+            commands::set_stock_holding,
+            commands::clear_stock_holding,
+            // 加密货币持仓命令
+            commands::get_crypto_holding,
+            commands::set_crypto_holding,
+            commands::clear_crypto_holding,
+            // 黄金命令
+            commands::get_gold_quote,
+            commands::get_gold_holding,
+            commands::set_gold_holding,
+            commands::clear_gold_holding,
         ])
         .run(context)
         .expect("error while running tauri application");

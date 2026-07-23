@@ -44,7 +44,7 @@
         "resizable": true,
         "title": "基金查询客户端",
         "width": 1200,
-        "height": 800,
+        "height": 900,
         "minWidth": 800,
         "minHeight": 600
       }

@@ -71,3 +71,84 @@ export interface UserData {
   last_migrated_at: number | null;
   preferences?: Record<string, unknown>;
 }
+
+/**
+ * 股票搜索结果
+ */
+export interface StockSearchResult {
+  code: string;
+  name: string;
+  market: string;
+}
+
+/**
+ * 股票行情信息
+ */
+export interface StockQuote {
+  code: string;
+  name: string;
+  price: number | null;
+  change_percent: number | null;
+  change_amount: number | null;
+  open: number | null;
+  high: number | null;
+  low: number | null;
+  yesterday_close: number | null;
+  volume: number | null;
+  update_time: string | null;
+}
+
+/**
+ * 加密货币行情信息
+ */
+export interface CryptoQuote {
+  symbol: string;
+  name: string;
+  price: number | null;
+  change_percent: number | null;
+  high_24h: number | null;
+  low_24h: number | null;
+  volume_24h: number | null;
+  update_time: string | null;
+}
+
+/**
+ * 股票持仓信息
+ */
+export interface StockHolding {
+  code: string;
+  holding_amount: number;
+  holding_shares: number;
+  cost_price: number;
+  created_at: number;
+  updated_at: number;
+}
+
+/**
+ * 加密货币持仓信息
+ */
+export interface CryptoHolding {
+  symbol: string;
+  holding_amount: number;
+  holding_quantity: number;
+  cost_price: number;
+  created_at: number;
+  updated_at: number;
+}
+
+/**
+ * 黄金行情信息
+ */
+export interface GoldQuote {
+  code: string;
+  name: string;
+  price: number | null;
+  change_percent: number | null;
+  change_amount: number | null;
+  open: number | null;
+  high: number | null;
+  low: number | null;
+  yesterday_close: number | null;
+  volume: number | null;
+  update_time: string | null;
+}

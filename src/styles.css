@@ -109,3 +109,775 @@ body {
 .fund-change.neutral {
   color: #c9d1ff;
 }
+
+/* ============================================================================
+   Tab Navigation
+   ============================================================================ */
+
+.tab-navigation {
+  display: flex;
+  gap: 4px;
+  margin-right: 16px;
+}
+
+.tab-btn {
+  padding: 6px 16px;
+  border: 1px solid rgba(122, 160, 255, 0.3);
+  border-radius: 6px;
+  background: transparent;
+  color: #c9d1ff;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.tab-btn:hover {
+  background: rgba(122, 160, 255, 0.1);
+  border-color: rgba(122, 160, 255, 0.5);
+}
+
+.tab-btn.active {
+  background: rgba(122, 160, 255, 0.2);
+  border-color: #7aa0ff;
+  color: #ffffff;
+}
+
+/* ============================================================================
+   Module Content (Stock/Crypto)
+   ============================================================================ */
+
+.module-content {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+/* ============================================================================
+   Stock Panel
+   ============================================================================ */
+
+.stock-panel,
+.crypto-panel {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.search-section {
+  margin-bottom: 24px;
+}
+
+.search-input-group {
+  display: flex;
+  gap: 8px;
+}
+
+.search-input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid rgba(122, 160, 255, 0.3);
+  border-radius: 8px;
+  background: rgba(15, 24, 56, 0.8);
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.search-input::placeholder {
+  color: rgba(201, 209, 255, 0.5);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #7aa0ff;
+}
+
+.search-results {
+  margin-top: 12px;
+  border: 1px solid rgba(122, 160, 255, 0.2);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.search-result-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(122, 160, 255, 0.1);
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+.result-info {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.result-code {
+  font-family: monospace;
+  color: #7aa0ff;
+  font-size: 13px;
+}
+
+.result-name {
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.result-market {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  background: rgba(122, 160, 255, 0.2);
+  color: #7aa0ff;
+}
+
+/* ============================================================================
+   Stock List & Cards
+   ============================================================================ */
+
+.stock-list-header,
+.crypto-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.stock-list-header h3,
+.crypto-list-header h3 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 16px;
+}
+
+.stock-cards,
+.crypto-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: center;
+}
+
+.stock-card,
+.crypto-card {
+  background: rgba(15, 24, 56, 0.8);
+  border: 1px solid rgba(122, 160, 255, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+  transition: all 0.2s ease;
+  min-width: 280px;
+  flex: 1;
+}
+
+.stock-card:hover,
+.crypto-card:hover {
+  border-color: rgba(122, 160, 255, 0.4);
+  transform: translateY(-2px);
+}
+
+.stock-card-header,
+.crypto-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.stock-name,
+.crypto-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.stock-code,
+.crypto-symbol {
+  font-family: monospace;
+  font-size: 12px;
+  color: rgba(201, 209, 255, 0.6);
+  margin-top: 2px;
+}
+
+.remove-btn {
+  padding: 4px 8px;
+  font-size: 16px;
+  line-height: 1;
+  color: rgba(201, 209, 255, 0.5);
+}
+
+.remove-btn:hover {
+  color: #ff6f91;
+}
+
+.stock-price,
+.crypto-price {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 8px 0 4px;
+}
+
+.stock-price.up,
+.crypto-price.up {
+  color: #ff6f91;
+}
+
+.stock-price.down,
+.crypto-price.down {
+  color: #4dd0e1;
+}
+
+.stock-change,
+.crypto-change {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.stock-change.up,
+.crypto-change.up {
+  color: #ff6f91;
+}
+
+.stock-change.down,
+.crypto-change.down {
+  color: #4dd0e1;
+}
+
+.stock-details,
+.crypto-details {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(122, 160, 255, 0.1);
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.detail-item .label {
+  font-size: 12px;
+  color: rgba(201, 209, 255, 0.6);
+}
+
+.detail-item .value {
+  font-size: 13px;
+  color: #ffffff;
+  font-family: monospace;
+}
+
+.detail-item .value.up {
+  color: #ff6f91;
+}
+
+.detail-item .value.down {
+  color: #4dd0e1;
+}
+
+.stock-time,
+.crypto-time {
+  margin-top: 12px;
+  font-size: 11px;
+  color: rgba(201, 209, 255, 0.4);
+  text-align: right;
+}
+
+/* ============================================================================
+   Crypto Panel - Quick Add
+   ============================================================================ */
+
+.quick-add-section {
+  margin-bottom: 24px;
+}
+
+.quick-add-section h3 {
+  margin: 0 0 12px 0;
+  color: #ffffff;
+  font-size: 16px;
+}
+
+.quick-add-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.quick-add-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 12px;
+  border: 1px solid rgba(122, 160, 255, 0.2);
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.quick-add-btn:hover:not(:disabled) {
+  background: rgba(122, 160, 255, 0.1);
+  border-color: rgba(122, 160, 255, 0.4);
+}
+
+.quick-add-btn.active {
+  background: rgba(122, 160, 255, 0.15);
+  border-color: #7aa0ff;
+}
+
+.quick-add-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.quick-add-btn .crypto-name {
+  font-size: 14px;
+  color: #ffffff;
+  margin-bottom: 4px;
+}
+
+.quick-add-btn .crypto-symbol {
+  font-size: 11px;
+  color: rgba(201, 209, 255, 0.6);
+}
+
+/* ============================================================================
+   Empty State
+   ============================================================================ */
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: rgba(201, 209, 255, 0.6);
+}
+
+.empty-state p {
+  margin: 8px 0;
+}
+
+.empty-state .hint {
+  font-size: 13px;
+  color: rgba(201, 209, 255, 0.4);
+}
+
+/* ============================================================================
+   Holding Section
+   ============================================================================ */
+
+.holding-section {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(122, 160, 255, 0.1);
+}
+
+.holding-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.holding-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #7aa0ff;
+}
+
+.holding-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.holding-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.holding-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.holding-item .label {
+  font-size: 12px;
+  color: rgba(201, 209, 255, 0.6);
+}
+
+.holding-item .value {
+  font-size: 13px;
+  color: #ffffff;
+  font-family: monospace;
+}
+
+.holding-item .value.up {
+  color: #ff6f91;
+}
+
+.holding-item .value.down {
+  color: #4dd0e1;
+}
+
+/* Holding Form */
+.holding-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-row label {
+  font-size: 12px;
+  color: rgba(201, 209, 255, 0.6);
+}
+
+.form-row input {
+  padding: 8px 10px;
+  border: 1px solid rgba(122, 160, 255, 0.3);
+  border-radius: 6px;
+  background: rgba(15, 24, 56, 0.8);
+  color: #ffffff;
+  font-size: 13px;
+}
+
+.form-row input:focus {
+  outline: none;
+  border-color: #7aa0ff;
+}
+
+.form-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.add-holding-btn {
+  width: 100%;
+  margin-top: 8px;
+}
+
+/* Danger button */
+.button.danger {
+  color: #ff6f91;
+}
+
+.button.danger:hover {
+  background: rgba(255, 111, 145, 0.1);
+}
+
+/* ============================================================================
+   Total Profit Display
+   ============================================================================ */
+
+.total-profit {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  margin: 8px 0;
+  border-radius: 8px;
+  background: rgba(15, 24, 56, 0.6);
+}
+
+.total-profit.up {
+  border-left: 3px solid #ff6f91;
+}
+
+.total-profit.down {
+  border-left: 3px solid #4dd0e1;
+}
+
+.profit-label {
+  font-size: 13px;
+  color: rgba(201, 209, 255, 0.8);
+}
+
+.profit-value {
+  font-size: 16px;
+  font-weight: 600;
+  font-family: monospace;
+}
+
+.total-profit.up .profit-value {
+  color: #ff6f91;
+}
+
+.total-profit.down .profit-value {
+  color: #4dd0e1;
+}
+
+/* ============================================================================
+   AI Chat Panel
+   ============================================================================ */
+
+.ai-chat-panel {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 120px);
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.ai-chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.ai-chat-header h3 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 18px;
+}
+
+.ai-chat-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ai-status {
+  font-size: 12px;
+  color: #7aa0ff;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Messages */
+.ai-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  background: rgba(15, 24, 56, 0.8);
+  border: 1px solid rgba(122, 160, 255, 0.2);
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+
+.ai-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: rgba(201, 209, 255, 0.6);
+}
+
+.ai-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.ai-empty-state p {
+  margin: 4px 0;
+}
+
+.ai-empty-state .hint {
+  font-size: 13px;
+  color: rgba(201, 209, 255, 0.4);
+}
+
+/* Message Item */
+.ai-message {
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  max-width: 85%;
+}
+
+.ai-message.user {
+  background: rgba(122, 160, 255, 0.2);
+  margin-left: auto;
+  border-bottom-right-radius: 4px;
+}
+
+.ai-message.assistant {
+  background: rgba(255, 255, 255, 0.05);
+  margin-right: auto;
+  border-bottom-left-radius: 4px;
+}
+
+.ai-message-role {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: rgba(201, 209, 255, 0.6);
+}
+
+.ai-message.user .ai-message-role {
+  color: #7aa0ff;
+}
+
+.ai-message.assistant .ai-message-role {
+  color: #ff6f91;
+}
+
+.ai-message-content {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #ffffff;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Input Area */
+.ai-input-area {
+  display: flex;
+  gap: 8px;
+}
+
+.ai-input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid rgba(122, 160, 255, 0.3);
+  border-radius: 10px;
+  background: rgba(15, 24, 56, 0.8);
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.ai-input::placeholder {
+  color: rgba(201, 209, 255, 0.4);
+}
+
+.ai-input:focus {
+  outline: none;
+  border-color: #7aa0ff;
+}
+
+.ai-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ============================================================================
+   Gold Panel
+   ============================================================================ */
+
+.gold-panel {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.gold-card {
+  background: rgba(15, 24, 56, 0.8);
+  border: 1px solid rgba(122, 160, 255, 0.2);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.gold-card-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.gold-icon {
+  font-size: 48px;
+}
+
+.gold-title h3 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 20px;
+}
+
+.gold-subtitle {
+  font-size: 12px;
+  color: rgba(201, 209, 255, 0.6);
+}
+
+.gold-price {
+  font-size: 42px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.gold-price.up {
+  color: #ff6f91;
+}
+
+.gold-price.down {
+  color: #4dd0e1;
+}
+
+.gold-change {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.gold-change.up {
+  color: #ff6f91;
+}
+
+.gold-change.down {
+  color: #4dd0e1;
+}
+
+.gold-details {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(122, 160, 255, 0.1);
+}
+
+.gold-details .detail-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.gold-details .label {
+  font-size: 12px;
+  color: rgba(201, 209, 255, 0.6);
+}
+
+.gold-details .value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.gold-time {
+  margin-top: 16px;
+  font-size: 12px;
+  color: rgba(201, 209, 255, 0.4);
+  text-align: right;
+}
+
+.gold-loading {
+  text-align: center;
+  padding: 40px;
+  color: rgba(201, 209, 255, 0.6);
+}
+
+/* Gold Holding Card */
+.gold-holding-card {
+  background: rgba(15, 24, 56, 0.8);
+  border: 1px solid rgba(122, 160, 255, 0.2);
+  border-radius: 16px;
+  padding: 24px;
+}
+

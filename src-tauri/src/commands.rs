@@ -1,5 +1,6 @@
-use crate::models::{AppState, FundDetail, FundInfo, FundList, FundSummary, FundTrend};
-use crate::modules::{fund_api, fund_storage, list_manager, position_manager};
+use crate::models::{AppState, CryptoQuote, FundDetail, FundInfo, FundList, FundSummary, FundTrend, StockQuote};
+use crate::modules::{fund_api, fund_storage, list_manager, position_manager, stock_api, crypto_api, asset_position, gold_api};
+use crate::modules::gold_api::GoldQuote;
 use std::sync::Mutex;
 use tauri::{AppHandle, Manager, State};
 
@@ -294,4 +295,189 @@ pub fn update_refresh_menu_selection(
 #[tauri::command]
 pub fn set_refresh_interval(app: AppHandle, interval_ms: u64) -> Result<(), String> {
     update_refresh_menu_selection(&app, interval_ms)
+}
+
+// ============================================================================
+// 股票相关命令
+// ============================================================================
+
+/// 搜索股票
+#[tauri::command]
+pub async fn search_stock(keyword: String) -> Result<Vec<stock_api::StockSearchResult>, String> {
+    eprintln!("search_stock called with keyword={}", keyword);
+    stock_api::search_stock(&keyword)
+        .await
+        .map_err(|e| e.user_message())
+}
+
+/// 获取股票行情
+#[tauri::command]
+pub async fn get_stock_quote(code: String) -> Result<StockQuote, String> {
+    eprintln!("get_stock_quote called with code={}", code);
+    stock_api::get_stock_quote(&code)
+        .await
+        .map_err(|e| e.user_message())
+}
+
+// ============================================================================
+// 加密货币相关命令
+// ============================================================================
+
+/// 获取加密货币行情
+#[tauri::command]
+pub async fn get_crypto_quote(symbol: String) -> Result<CryptoQuote, String> {
+    eprintln!("get_crypto_quote called with symbol={}", symbol);
+    crypto_api::get_crypto_quote(&symbol)
+        .await
+        .map_err(|e| e.user_message())
+}
+
+/// 批量获取加密货币行情
+#[tauri::command]
+pub async fn get_crypto_quotes(symbols: Vec<String>) -> Result<Vec<CryptoQuote>, String> {
+    eprintln!("get_crypto_quotes called with symbols={:?}", symbols);
+    crypto_api::get_crypto_quotes(&symbols)
+        .await
+        .map_err(|e| e.user_message())
+}
+
+/// 获取常用加密货币列表
+#[tauri::command]
+pub fn get_popular_cryptos() -> Vec<(String, String)> {
+    crypto_api::get_popular_cryptos()
+        .into_iter()
+        .map(|(s, n)| (s.to_string(), n.to_string()))
+        .collect()
+}
+
+// ============================================================================
+// 股票持仓命令
+// ============================================================================
+
+/// 获取股票持仓
+#[tauri::command]
+pub async fn get_stock_holding(
+    state: State<'_, Mutex<AppState>>,
+    code: String,
+) -> Result<Option<asset_position::StockHolding>, String> {
+    let pool = state.lock().unwrap().pool.clone();
+    asset_position::get_stock_holding(&pool, &code)
+        .await
+        .map_err(|e| e.user_message())
+}
+
+/// 设置股票持仓
+#[tauri::command]
+pub async fn set_stock_holding(
+    state: State<'_, Mutex<AppState>>,
+    code: String,
+    holding_amount: f64,
+    holding_shares: f64,
+) -> Result<asset_position::StockHolding, String> {
+    let pool = state.lock().unwrap().pool.clone();
+    asset_position::set_stock_holding(&pool, &code, holding_amount, holding_shares)
+        .await
+        .map_err(|e| e.user_message())
+}
+
+/// 清空股票持仓
+#[tauri::command]
+pub async fn clear_stock_holding(
+    state: State<'_, Mutex<AppState>>,
+    code: String,
+) -> Result<(), String> {
+    let pool = state.lock().unwrap().pool.clone();
+    asset_position::clear_stock_holding(&pool, &code)
+        .await
+        .map_err(|e| e.user_message())
+}
+
+// ============================================================================
+// 加密货币持仓命令
+// ============================================================================
+
+/// 获取加密货币持仓
+#[tauri::command]
+pub async fn get_crypto_holding(
+    state: State<'_, Mutex<AppState>>,
+    symbol: String,
+) -> Result<Option<asset_position::CryptoHolding>, String> {
+    let pool = state.lock().unwrap().pool.clone();
+    asset_position::get_crypto_holding(&pool, &symbol)
+        .await
+        .map_err(|e| e.user_message())
+}
+
+/// 设置加密货币持仓
+#[tauri::command]
+pub async fn set_crypto_holding(
+    state: State<'_, Mutex<AppState>>,
+    symbol: String,
+    holding_amount: f64,
+    holding_quantity: f64,
+) -> Result<asset_position::CryptoHolding, String> {
+    let pool = state.lock().unwrap().pool.clone();
+    asset_position::set_crypto_holding(&pool, &symbol, holding_amount, holding_quantity)
+        .await
+        .map_err(|e| e.user_message())
+}
+
+/// 清空加密货币持仓
+#[tauri::command]
+pub async fn clear_crypto_holding(
+    state: State<'_, Mutex<AppState>>,
+    symbol: String,
+) -> Result<(), String> {
+    let pool = state.lock().unwrap().pool.clone();
+    asset_position::clear_crypto_holding(&pool, &symbol)
+        .await
+        .map_err(|e| e.user_message())
+}
+
+// ============================================================================
+// 黄金相关命令
+// ============================================================================
+
+/// 获取黄金行情
+#[tauri::command]
+pub async fn get_gold_quote() -> Result<GoldQuote, String> {
+    eprintln!("get_gold_quote called");
+    gold_api::get_gold_quote()
+        .await
+        .map_err(|e| e.user_message())
+}
+
+/// 获取黄金持仓
+#[tauri::command]
+pub async fn get_gold_holding(
+    state: State<'_, Mutex<AppState>>,
+) -> Result<Option<asset_position::CryptoHolding>, String> {
+    let pool = state.lock().unwrap().pool.clone();
+    gold_api::get_gold_holding(&pool)
+        .await
+        .map_err(|e| e.user_message())
+}
+
+/// 设置黄金持仓
+#[tauri::command]
+pub async fn set_gold_holding(
+    state: State<'_, Mutex<AppState>>,
+    holding_amount: f64,
+    holding_quantity: f64,
+) -> Result<asset_position::CryptoHolding, String> {
+    let pool = state.lock().unwrap().pool.clone();
+    gold_api::set_gold_holding(&pool, holding_amount, holding_quantity)
+        .await
+        .map_err(|e| e.user_message())
+}
+
+/// 清空黄金持仓
+#[tauri::command]
+pub async fn clear_gold_holding(
+    state: State<'_, Mutex<AppState>>,
+) -> Result<(), String> {
+    let pool = state.lock().unwrap().pool.clone();
+    gold_api::clear_gold_holding(&pool)
+        .await
+        .map_err(|e| e.user_message())
 }
