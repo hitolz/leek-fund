@@ -7,6 +7,7 @@ import {
   formatSignedCurrency,
   getChangeClassFromNumber,
 } from "../utils/formatters";
+import { isFundTradingTime } from "../utils/tradingHours";
 
 interface ListDetailViewProps {
   listId: number | null;
@@ -94,7 +95,9 @@ export const ListDetailView: React.FC<ListDetailViewProps> = ({
   useEffect(() => {
     if (listId === null) return;
     const timer = setInterval(() => {
-      loadFunds(true);
+      if (isFundTradingTime()) {
+        loadFunds(true);
+      }
     }, refreshIntervalMs);
     return () => clearInterval(timer);
   }, [listId, refreshIntervalMs]);

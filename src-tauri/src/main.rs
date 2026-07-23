@@ -6,15 +6,16 @@ mod commands;
 mod db;
 mod errors;
 mod http_server;
+mod migrations;
 mod models;
 mod modules;
-mod migrations;
 mod services;
 
+use http_server::ChatApiState;
 use models::AppState;
 use modules::storage;
-use http_server::ChatApiState;
-use std::sync::{Arc, Mutex};
+use services::llm_client;
+use std::sync::{Arc, Mutex, RwLock};
 use tauri::{CustomMenuItem, Manager, Menu, Submenu};
 
 const REFRESH_MENU_ITEMS: &[(u64, &str, &str)] = &[
@@ -53,19 +54,30 @@ fn main() {
             // 创建应用状态
             let app_state = AppState::new(pool.clone(), db_path, legacy_json_path, warning);
 
+            // LLM 配置存储在数据库同目录 (~/.leek/)
+            let llm_config_dir = app_state.db_path.parent()
+                .expect("数据库路径无效")
+                .to_path_buf();
+            let llm_config = llm_client::load_config(&llm_config_dir);
+
             // 管理状态
             app.manage(Mutex::new(app_state));
 
             // 启动 AI 聊天 HTTP 服务器
-            let chat_state = Arc::new(ChatApiState { pool });
+            let chat_state = Arc::new(ChatApiState {
+                pool,
+                llm_config: Arc::new(RwLock::new(llm_config)),
+                app_data_dir: llm_config_dir,
+            });
             tauri::async_runtime::spawn(http_server::start_server(chat_state, 18188));
 
             Ok(())
         })
         .on_menu_event(|event| {
             let id = event.menu_item_id();
-            if let Some((interval_ms, _, _)) =
-                REFRESH_MENU_ITEMS.iter().find(|(_, item_id, _)| *item_id == id)
+            if let Some((interval_ms, _, _)) = REFRESH_MENU_ITEMS
+                .iter()
+                .find(|(_, item_id, _)| *item_id == id)
             {
                 let app = event.window().app_handle();
                 if commands::update_refresh_menu_selection(&app, *interval_ms).is_ok() {
@@ -113,6 +125,9 @@ fn main() {
             commands::get_gold_holding,
             commands::set_gold_holding,
             commands::clear_gold_holding,
+            // AI 投资驾驶舱命令
+            commands::get_portfolio_snapshot,
+            commands::refresh_portfolio_snapshot,
         ])
         .run(context)
         .expect("error while running tauri application");

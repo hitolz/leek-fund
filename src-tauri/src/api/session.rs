@@ -1,15 +1,33 @@
 use crate::errors::AppError;
 use crate::http_server::SharedState;
 use crate::services::session_service;
-use axum::extract::State;
+use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
+use serde::Deserialize;
+
+#[derive(Debug, Deserialize)]
+pub struct ListSessionsQuery {
+    pub limit: Option<i64>,
+}
+
+pub async fn list_sessions(
+    State(state): State<SharedState>,
+    Query(params): Query<ListSessionsQuery>,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    let limit = params.limit.unwrap_or(50).min(200);
+    let sessions = session_service::list_sessions(&state.pool, limit)
+        .await
+        .map_err(to_http_error)?;
+
+    Ok(Json(sessions))
+}
 
 pub async fn create_session(
     State(state): State<SharedState>,
 ) -> Result<impl IntoResponse, (StatusCode, String)> {
-    let session = session_service::get_or_create_recent_session(&state.pool)
+    let session = session_service::create_session(&state.pool)
         .await
         .map_err(to_http_error)?;
 

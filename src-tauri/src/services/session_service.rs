@@ -10,12 +10,20 @@ pub async fn get_or_create_recent_session(pool: &SqlitePool) -> AppResult<ChatSe
     session::create_session(pool).await
 }
 
+pub async fn create_session(pool: &SqlitePool) -> AppResult<ChatSession> {
+    session::create_session(pool).await
+}
+
 pub async fn touch_session(pool: &SqlitePool, session_id: &str) -> AppResult<()> {
     session::touch_session(pool, session_id).await
 }
 
 pub async fn get_recent_session(pool: &SqlitePool) -> AppResult<Option<ChatSession>> {
     session::get_recent_session(pool).await
+}
+
+pub async fn list_sessions(pool: &SqlitePool, limit: i64) -> AppResult<Vec<ChatSession>> {
+    session::list_sessions(pool, limit).await
 }
 
 pub async fn ensure_session_exists(pool: &SqlitePool, session_id: &str) -> AppResult<()> {

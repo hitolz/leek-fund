@@ -4,11 +4,12 @@ import { ListDetailView } from "./components/ListDetailView";
 import { StockPanel } from "./components/StockPanel";
 import { CryptoPanel } from "./components/CryptoPanel";
 import { GoldPanel } from "./components/GoldPanel";
-import { AiChatPanel } from "./components/AiChatPanel";
+import { AiCopilotPanel } from "./components/ai/AiCopilotPanel";
 import { useTauriCommands } from "./hooks/useTauriCommands";
 import { FundDetail, FundList, FundTrend, Holding } from "./types";
 import { useToast } from "./components/ToastContext";
 import { FundDetailPanel } from "./components/FundDetailPanel";
+import { isFundTradingTime } from "./utils/tradingHours";
 import "./App.css";
 
 type ActiveTab = "fund" | "stock" | "crypto" | "gold" | "ai";
@@ -183,7 +184,9 @@ function App({ globalRefreshMs }: AppProps) {
     loadTrend();
 
     const timer = setInterval(() => {
-      loadDetail(true);
+      if (isFundTradingTime()) {
+        loadDetail(true);
+      }
     }, globalRefreshMs);
 
     return () => clearInterval(timer);
@@ -286,7 +289,7 @@ function App({ globalRefreshMs }: AppProps) {
               className={`tab-btn ${activeTab === "ai" ? "active" : ""}`}
               onClick={() => setActiveTab("ai")}
             >
-              AI
+              AI 驾驶舱
             </button>
           </div>
           {activeTab === "fund" && (
@@ -413,10 +416,10 @@ function App({ globalRefreshMs }: AppProps) {
         </div>
       )}
 
-      {/* AI 对话模块 */}
+      {/* AI 投资驾驶舱 */}
       {activeTab === "ai" && (
-        <div className="module-content">
-          <AiChatPanel showToast={showToast} />
+        <div className="module-content ai-module-content">
+          <AiCopilotPanel showToast={showToast} />
         </div>
       )}
     </div>

@@ -1,6 +1,11 @@
-use crate::models::{AppState, CryptoQuote, FundDetail, FundInfo, FundList, FundSummary, FundTrend, StockQuote};
-use crate::modules::{fund_api, fund_storage, list_manager, position_manager, stock_api, crypto_api, asset_position, gold_api};
+use crate::models::{
+    AppState, CryptoQuote, FundDetail, FundInfo, FundList, FundSummary, FundTrend, StockQuote,
+};
 use crate::modules::gold_api::GoldQuote;
+use crate::modules::{
+    asset_position, crypto_api, fund_api, fund_storage, gold_api, list_manager, portfolio_snapshot,
+    position_manager, stock_api,
+};
 use std::sync::Mutex;
 use tauri::{AppHandle, Manager, State};
 
@@ -114,13 +119,14 @@ pub async fn get_list_fund_summaries(
     for code in fund_codes {
         match fund_api::get_fund_summary(&code).await {
             Ok(mut fund) => {
-                let position = match position_manager::get_group_fund_position(&pool, list_id, &code).await {
-                    Ok(position) => position,
-                    Err(err) => {
-                        eprintln!("Failed to load holding position: {}", err.details());
-                        None
-                    }
-                };
+                let position =
+                    match position_manager::get_group_fund_position(&pool, list_id, &code).await {
+                        Ok(position) => position,
+                        Err(err) => {
+                            eprintln!("Failed to load holding position: {}", err.details());
+                            None
+                        }
+                    };
                 let holding_amount = position.as_ref().map(|p| p.holding_amount);
                 fund.holding_amount = holding_amount;
                 fund.daily_change_amount = list_manager::compute_daily_change_amount(
@@ -149,7 +155,8 @@ pub async fn get_list_fund_detail(
         .await
         .map_err(|e| e.user_message())?;
     let pool = state.lock().unwrap().pool.clone();
-    let position = match position_manager::get_group_fund_position(&pool, list_id, &fund_code).await {
+    let position = match position_manager::get_group_fund_position(&pool, list_id, &fund_code).await
+    {
         Ok(position) => position,
         Err(err) => {
             eprintln!("Failed to load holding position: {}", err.details());
@@ -274,10 +281,7 @@ const REFRESH_MENU_ITEMS: &[(u64, &str)] = &[
     (120_000, "refresh_120s"),
 ];
 
-pub fn update_refresh_menu_selection(
-    app: &AppHandle,
-    interval_ms: u64,
-) -> Result<(), String> {
+pub fn update_refresh_menu_selection(app: &AppHandle, interval_ms: u64) -> Result<(), String> {
     let window = app
         .get_window("main")
         .ok_or_else(|| "主窗口未找到".to_string())?;
@@ -473,11 +477,48 @@ pub async fn set_gold_holding(
 
 /// 清空黄金持仓
 #[tauri::command]
-pub async fn clear_gold_holding(
-    state: State<'_, Mutex<AppState>>,
-) -> Result<(), String> {
+pub async fn clear_gold_holding(state: State<'_, Mutex<AppState>>) -> Result<(), String> {
     let pool = state.lock().unwrap().pool.clone();
     gold_api::clear_gold_holding(&pool)
+        .await
+        .map_err(|e| e.user_message())
+}
+
+// ============================================================================
+// AI 投资驾驶舱命令
+// ============================================================================
+
+/// 获取组合快照（优先返回最新，没有则创建）
+#[tauri::command]
+pub async fn get_portfolio_snapshot(
+    state: State<'_, Mutex<AppState>>,
+) -> Result<portfolio_snapshot::PortfolioSnapshot, String> {
+    let pool = state.lock().unwrap().pool.clone();
+
+    // 先尝试获取最新快照
+    if let Ok(Some(snapshot)) = portfolio_snapshot::get_latest_snapshot(&pool).await {
+        // 检查快照是否是今天的
+        let now = chrono::Utc::now().timestamp();
+        let snapshot_age = now - snapshot.snapshot_at;
+        // 如果快照在 5 分钟内，直接返回
+        if snapshot_age < 300 {
+            return Ok(snapshot);
+        }
+    }
+
+    // 创建新快照
+    portfolio_snapshot::create_full_snapshot(&pool)
+        .await
+        .map_err(|e| e.user_message())
+}
+
+/// 强制刷新组合快照
+#[tauri::command]
+pub async fn refresh_portfolio_snapshot(
+    state: State<'_, Mutex<AppState>>,
+) -> Result<portfolio_snapshot::PortfolioSnapshot, String> {
+    let pool = state.lock().unwrap().pool.clone();
+    portfolio_snapshot::create_full_snapshot(&pool)
         .await
         .map_err(|e| e.user_message())
 }

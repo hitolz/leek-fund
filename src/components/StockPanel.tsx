@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useTauriCommands } from "../hooks/useTauriCommands";
 import { StockQuote, StockSearchResult, StockHolding } from "../types";
+import { isStockTradingTime } from "../utils/tradingHours";
 
 const STOCK_WATCHLIST_KEY = "leek-fund-stock-watchlist";
 
@@ -159,6 +160,22 @@ export const StockPanel: React.FC<StockPanelProps> = ({ showToast }) => {
     }
   }, [stocks, getStockQuote]);
 
+  const handleAutoRefresh = useCallback(async () => {
+    const activeStocks = stocks.filter((stock) =>
+      isStockTradingTime(stock.code)
+    );
+    if (activeStocks.length === 0) return;
+    const refreshed = await Promise.all(
+      activeStocks.map((stock) => getStockQuote(stock.code).catch(() => stock))
+    );
+    const refreshedByCode = new Map(
+      refreshed.map((stock) => [stock.code, stock])
+    );
+    setStocks((current) =>
+      current.map((stock) => refreshedByCode.get(stock.code) ?? stock)
+    );
+  }, [stocks, getStockQuote]);
+
   // 保存持仓
   const handleSaveHolding = useCallback(
     async (code: string) => {
@@ -217,9 +234,11 @@ export const StockPanel: React.FC<StockPanelProps> = ({ showToast }) => {
   // 自动刷新
   useEffect(() => {
     if (stocks.length === 0) return;
-    const timer = setInterval(handleRefresh, 30000);
+    const timer = setInterval(() => {
+      void handleAutoRefresh();
+    }, 30000);
     return () => clearInterval(timer);
-  }, [stocks.length, handleRefresh]);
+  }, [stocks.length, handleAutoRefresh]);
 
   return (
     <div className="stock-panel">

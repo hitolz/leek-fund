@@ -1,8 +1,8 @@
 use crate::errors::{AppError, AppResult};
+use crate::migrations;
 use crate::models::{FundList, UserData};
 use crate::modules::asset_position;
 use chrono::Utc;
-use crate::migrations;
 use serde::Deserialize;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use sqlx::{Row, SqlitePool};
@@ -11,25 +11,30 @@ use std::path::{Path, PathBuf};
 
 const DB_FILE_NAME: &str = "lists.sqlite";
 const LEGACY_JSON_NAME: &str = "lists.json";
+const STORAGE_DIR_NAME: &str = ".leek";
+const SQLITE_SIDECAR_FILES: &[&str] = &["lists.sqlite-wal", "lists.sqlite-shm"];
 
 /// 初始化存储目录并返回 SQLite 连接池
 pub async fn init_storage(
     app_handle: &tauri::AppHandle,
 ) -> AppResult<(SqlitePool, PathBuf, PathBuf, Option<String>)> {
-    let app_data_dir = app_handle
+    let legacy_app_data_dir = app_handle
         .path_resolver()
         .app_data_dir()
         .ok_or_else(|| AppError::StorageError("无法获取应用数据目录".to_string()))?;
+    let storage_dir = storage_dir_from_home(tauri::api::path::home_dir())?;
 
-    fs::create_dir_all(&app_data_dir)?;
+    fs::create_dir_all(&storage_dir)?;
+    migrate_legacy_storage_files(&legacy_app_data_dir, &storage_dir)?;
 
-    let db_path = app_data_dir.join(DB_FILE_NAME);
-    let legacy_json_path = app_data_dir.join(LEGACY_JSON_NAME);
+    let db_path = storage_dir.join(DB_FILE_NAME);
+    let legacy_json_path = storage_dir.join(LEGACY_JSON_NAME);
 
     let (pool, warning) = open_or_recover_db(&db_path).await?;
 
     run_migrations(&pool).await?;
     ensure_group_fund_positions_schema(&pool).await?;
+    ensure_ai_copilot_schema(&pool).await?;
 
     // 初始化股票和加密货币持仓表
     asset_position::init_stock_holdings_table(&pool).await?;
@@ -40,6 +45,52 @@ pub async fn init_storage(
     }
 
     Ok((pool, db_path, legacy_json_path, warning))
+}
+
+fn storage_dir_from_home(home_dir: Option<PathBuf>) -> AppResult<PathBuf> {
+    home_dir
+        .map(|path| path.join(STORAGE_DIR_NAME))
+        .ok_or_else(|| AppError::StorageError("无法获取用户主目录".to_string()))
+}
+
+/// 首次使用新目录时复制旧数据，原文件保留用于回退。
+fn migrate_legacy_storage_files(legacy_dir: &Path, storage_dir: &Path) -> AppResult<()> {
+    if legacy_dir == storage_dir {
+        return Ok(());
+    }
+
+    let source_db = legacy_dir.join(DB_FILE_NAME);
+    let target_db = storage_dir.join(DB_FILE_NAME);
+    if target_db.exists() {
+        return Ok(());
+    }
+
+    let files: Vec<&str> = if source_db.exists() {
+        std::iter::once(DB_FILE_NAME)
+            .chain(SQLITE_SIDECAR_FILES.iter().copied())
+            .chain(std::iter::once(LEGACY_JSON_NAME))
+            .collect()
+    } else {
+        vec![LEGACY_JSON_NAME]
+    };
+
+    for file_name in files {
+        let source = legacy_dir.join(file_name);
+        let target = storage_dir.join(file_name);
+        if !source.exists() || target.exists() {
+            continue;
+        }
+        fs::copy(&source, &target).map_err(|error| {
+            AppError::StorageError(format!(
+                "迁移存储文件 {} 到 {} 失败: {}",
+                source.display(),
+                target.display(),
+                error
+            ))
+        })?;
+    }
+
+    Ok(())
 }
 
 async fn open_or_recover_db(db_path: &Path) -> AppResult<(SqlitePool, Option<String>)> {
@@ -147,6 +198,34 @@ async fn ensure_group_fund_positions_schema(pool: &SqlitePool) -> AppResult<()> 
     .await
     .map_err(|e| AppError::StorageError(format!("数据库写入失败: {}", e)))?;
 
+    Ok(())
+}
+
+async fn ensure_ai_copilot_schema(pool: &SqlitePool) -> AppResult<()> {
+    let columns: Vec<String> = sqlx::query("PRAGMA table_info('session_chat_messages')")
+        .fetch_all(pool)
+        .await
+        .map_err(|error| AppError::StorageError(format!("数据库读取失败: {error}")))?
+        .into_iter()
+        .filter_map(|row| row.try_get::<String, _>("name").ok())
+        .collect();
+    for (column, definition) in [("snapshot_id", "TEXT"), ("context_json", "TEXT")] {
+        if !columns.iter().any(|name| name == column) {
+            sqlx::query(&format!(
+                "ALTER TABLE session_chat_messages ADD COLUMN {column} {definition}"
+            ))
+            .execute(pool)
+            .await
+            .map_err(|error| AppError::StorageError(format!("迁移执行失败: {error}")))?;
+        }
+    }
+    sqlx::query(
+        "CREATE INDEX IF NOT EXISTS idx_session_messages_snapshot \
+         ON session_chat_messages(snapshot_id)",
+    )
+    .execute(pool)
+    .await
+    .map_err(|error| AppError::StorageError(format!("迁移执行失败: {error}")))?;
     Ok(())
 }
 
@@ -375,6 +454,58 @@ mod tests {
     use tempfile::TempDir;
 
     #[test]
+    fn storage_directory_is_hidden_folder_under_home() {
+        let home = PathBuf::from("/users/tester");
+        assert_eq!(
+            storage_dir_from_home(Some(home.clone())).unwrap(),
+            home.join(".leek")
+        );
+        assert!(storage_dir_from_home(None).is_err());
+    }
+
+    #[test]
+    fn legacy_storage_files_are_copied_without_overwriting_new_data() {
+        let temp_dir = TempDir::new().unwrap();
+        let legacy_dir = temp_dir.path().join("legacy");
+        let storage_dir = temp_dir.path().join("home").join(".leek");
+        fs::create_dir_all(&legacy_dir).unwrap();
+        fs::create_dir_all(&storage_dir).unwrap();
+
+        fs::write(legacy_dir.join(DB_FILE_NAME), b"old database").unwrap();
+        fs::write(legacy_dir.join("lists.sqlite-wal"), b"old wal").unwrap();
+        fs::write(legacy_dir.join("lists.sqlite-shm"), b"old shm").unwrap();
+        fs::write(legacy_dir.join(LEGACY_JSON_NAME), b"old json").unwrap();
+
+        migrate_legacy_storage_files(&legacy_dir, &storage_dir).unwrap();
+
+        assert_eq!(
+            fs::read(storage_dir.join(DB_FILE_NAME)).unwrap(),
+            b"old database"
+        );
+        assert_eq!(
+            fs::read(storage_dir.join("lists.sqlite-wal")).unwrap(),
+            b"old wal"
+        );
+        assert_eq!(
+            fs::read(storage_dir.join("lists.sqlite-shm")).unwrap(),
+            b"old shm"
+        );
+        assert_eq!(
+            fs::read(storage_dir.join(LEGACY_JSON_NAME)).unwrap(),
+            b"old json"
+        );
+
+        fs::write(storage_dir.join(DB_FILE_NAME), b"new database").unwrap();
+        fs::remove_file(storage_dir.join("lists.sqlite-wal")).unwrap();
+        migrate_legacy_storage_files(&legacy_dir, &storage_dir).unwrap();
+        assert_eq!(
+            fs::read(storage_dir.join(DB_FILE_NAME)).unwrap(),
+            b"new database"
+        );
+        assert!(!storage_dir.join("lists.sqlite-wal").exists());
+    }
+
+    #[test]
     fn test_load_legacy_nonexistent_file() {
         let temp_dir = TempDir::new().unwrap();
         let path = temp_dir.path().join("nonexistent.json");
@@ -406,5 +537,56 @@ mod tests {
             })
             .collect();
         assert!(!backup_files.is_empty());
+    }
+
+    #[tokio::test]
+    async fn ai_schema_upgrade_adds_context_columns_to_legacy_table() {
+        let pool = SqlitePool::connect("sqlite::memory:").await.unwrap();
+        sqlx::query(
+            "CREATE TABLE session_chat_messages (\
+             id INTEGER PRIMARY KEY, session_id TEXT NOT NULL, role TEXT NOT NULL, \
+             content TEXT NOT NULL, saved_state TEXT, created_at INTEGER NOT NULL, \
+             updated_at INTEGER NOT NULL)",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+        ensure_ai_copilot_schema(&pool).await.unwrap();
+        ensure_ai_copilot_schema(&pool).await.unwrap();
+        let columns: Vec<String> = sqlx::query("PRAGMA table_info('session_chat_messages')")
+            .fetch_all(&pool)
+            .await
+            .unwrap()
+            .into_iter()
+            .map(|row| row.get("name"))
+            .collect();
+        assert!(columns.iter().any(|name| name == "snapshot_id"));
+        assert!(columns.iter().any(|name| name == "context_json"));
+    }
+
+    #[tokio::test]
+    async fn existing_database_runs_ai_migration_before_context_index() {
+        let pool = SqlitePool::connect("sqlite::memory:").await.unwrap();
+        run_migrations(&pool).await.unwrap();
+        ensure_ai_copilot_schema(&pool).await.unwrap();
+
+        let columns: Vec<String> = sqlx::query("PRAGMA table_info('session_chat_messages')")
+            .fetch_all(&pool)
+            .await
+            .unwrap()
+            .into_iter()
+            .map(|row| row.get("name"))
+            .collect();
+        assert!(columns.iter().any(|name| name == "snapshot_id"));
+        assert!(columns.iter().any(|name| name == "context_json"));
+
+        let index_count: i64 = sqlx::query_scalar(
+            "SELECT COUNT(*) FROM sqlite_master \
+             WHERE type = 'index' AND name = 'idx_session_messages_snapshot'",
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert_eq!(index_count, 1);
     }
 }

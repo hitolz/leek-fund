@@ -55,3 +55,24 @@ pub async fn touch_session(pool: &SqlitePool, session_id: &str) -> AppResult<()>
         .map_err(|e| AppError::StorageError(format!("数据库写入失败: {}", e)))?;
     Ok(())
 }
+
+pub async fn list_sessions(pool: &SqlitePool, limit: i64) -> AppResult<Vec<ChatSession>> {
+    let rows = sqlx::query(
+        "SELECT id, session_id, title, created_at, updated_at FROM sessions ORDER BY updated_at DESC LIMIT ?",
+    )
+    .bind(limit)
+    .fetch_all(pool)
+    .await
+    .map_err(|e| AppError::StorageError(format!("数据库读取失败: {}", e)))?;
+
+    Ok(rows
+        .into_iter()
+        .map(|row| ChatSession {
+            id: row.get::<i64, _>("id"),
+            session_id: row.get::<String, _>("session_id"),
+            title: row.get::<Option<String>, _>("title"),
+            created_at: row.get::<i64, _>("created_at"),
+            updated_at: row.get::<i64, _>("updated_at"),
+        })
+        .collect())
+}

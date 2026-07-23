@@ -7,8 +7,19 @@ pub async fn save_user_message(
     pool: &SqlitePool,
     session_id: &str,
     content: &str,
+    snapshot_id: Option<&str>,
+    context_json: Option<&str>,
 ) -> AppResult<ChatMessage> {
-    session_chat_message::insert_message(pool, session_id, "user", content, "saved").await
+    session_chat_message::insert_message(
+        pool,
+        session_id,
+        "user",
+        content,
+        "saved",
+        snapshot_id,
+        context_json,
+    )
+    .await
 }
 
 pub async fn save_assistant_message(
@@ -17,7 +28,16 @@ pub async fn save_assistant_message(
     content: &str,
     saved_state: &str,
 ) -> AppResult<ChatMessage> {
-    session_chat_message::insert_message(pool, session_id, "assistant", content, saved_state).await
+    session_chat_message::insert_message(
+        pool,
+        session_id,
+        "assistant",
+        content,
+        saved_state,
+        None,
+        None,
+    )
+    .await
 }
 
 pub async fn list_messages(

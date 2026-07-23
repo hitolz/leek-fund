@@ -9,15 +9,21 @@ pub async fn insert_message(
     role: &str,
     content: &str,
     saved_state: &str,
+    snapshot_id: Option<&str>,
+    context_json: Option<&str>,
 ) -> AppResult<ChatMessage> {
     let now = Utc::now().timestamp();
     let result = sqlx::query(
-        "INSERT INTO session_chat_messages (session_id, role, content, saved_state, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+        "INSERT INTO session_chat_messages \
+         (session_id, role, content, saved_state, snapshot_id, context_json, created_at, updated_at) \
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
     )
     .bind(session_id)
     .bind(role)
     .bind(content)
     .bind(saved_state)
+    .bind(snapshot_id)
+    .bind(context_json)
     .bind(now)
     .bind(now)
     .execute(pool)
@@ -35,7 +41,11 @@ pub async fn insert_message(
     })
 }
 
-pub async fn list_messages(pool: &SqlitePool, session_id: &str, limit: Option<i64>) -> AppResult<Vec<ChatMessage>> {
+pub async fn list_messages(
+    pool: &SqlitePool,
+    session_id: &str,
+    limit: Option<i64>,
+) -> AppResult<Vec<ChatMessage>> {
     let sql = if limit.is_some() {
         "SELECT id, session_id, role, content, saved_state, created_at, updated_at \
          FROM session_chat_messages WHERE session_id = ? ORDER BY id ASC LIMIT ?"
